@@ -7,6 +7,22 @@ from app.models.camera import Camera
 
 
 def init_db():
+    import os
+    from pathlib import Path
+    
+    # Ensure data directory exists and is writable
+    data_dir = Path("/app/data")
+    data_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Check if database file exists and remove it for clean start
+    db_file = data_dir / "southern_crown.db"
+    if db_file.exists():
+        try:
+            db_file.unlink()
+            print("Removed old database file")
+        except Exception as e:
+            print(f"Warning: Could not remove old database: {e}")
+    
     # Create tables
     Base.metadata.create_all(bind=engine)
     

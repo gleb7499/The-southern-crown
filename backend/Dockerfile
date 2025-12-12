@@ -3,31 +3,36 @@ FROM python:3.10-slim as builder
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies to a virtual environment
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN python -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Final stage
 FROM python:3.10-slim
 
 WORKDIR /app
 
-# Copy installed packages from builder
-COPY --from=builder /root/.local /root/.local
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
 
-# Copy application code
-COPY . .
+# Use virtual environment
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Create non-root user (best practice for security)
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
+# Create non-root user first (before copying files)
+RUN useradd -m -u 1000 appuser
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data && chown -R appuser:appuser /app/data
 
+# Copy application code
+COPY --chown=appuser:appuser . .
+
+# Switch to non-root user
 USER appuser
 
 # Health check

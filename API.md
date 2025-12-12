@@ -1,16 +1,16 @@
-# Southern Crown API Documentation
+# The Southern Crown - Документация API
 
-Base URL: `http://localhost:8000`
+Базовый URL: `http://localhost:8000`
 
-## Authentication
+## Аутентификация
 
-All API endpoints (except `/auth/login`) require authentication via HttpOnly cookie.
+Все API endpoints (кроме `/auth/login`) требуют аутентификации через HttpOnly cookie.
 
 ### POST /auth/login
 
-Login and receive JWT token in cookie.
+Вход в систему и получение JWT токена в cookie.
 
-**Request:**
+**Запрос:**
 ```json
 {
   "email": "admin@example.com",
@@ -18,10 +18,10 @@ Login and receive JWT token in cookie.
 }
 ```
 
-**Response:**
+**Ответ:**
 ```json
 {
-  "message": "Login successful",
+  "message": "Вход успешен",
   "user": {
     "email": "admin@example.com",
     "is_admin": true
@@ -29,21 +29,21 @@ Login and receive JWT token in cookie.
 }
 ```
 
-**Status Codes:**
-- `200 OK` - Login successful
-- `401 Unauthorized` - Invalid credentials
-- `400 Bad Request` - Inactive user
+**Коды статуса:**
+- `200 OK` - Вход успешен
+- `401 Unauthorized` - Неверные учётные данные
+- `400 Bad Request` - Пользователь неактивен
 
 ---
 
 ### POST /auth/logout
 
-Logout and clear authentication cookie.
+Выход из системы и очистка cookie аутентификации.
 
-**Response:**
+**Ответ:**
 ```json
 {
-  "message": "Logout successful"
+  "message": "Выход успешен"
 }
 ```
 
@@ -51,9 +51,9 @@ Logout and clear authentication cookie.
 
 ### GET /auth/me
 
-Get current authenticated user information.
+Получить информацию о текущем аутентифицированном пользователе.
 
-**Response:**
+**Ответ:**
 ```json
 {
   "id": 1,
@@ -63,23 +63,23 @@ Get current authenticated user information.
 }
 ```
 
-**Status Codes:**
-- `200 OK` - Success
-- `401 Unauthorized` - Not authenticated
+**Коды статуса:**
+- `200 OK` - Успешно
+- `401 Unauthorized` - Не аутентифицирован
 
 ---
 
-## Farms
+## Фермы
 
 ### GET /api/farms
 
-Get list of all farms with pagination.
+Получить список всех ферм с пагинацией.
 
-**Query Parameters:**
-- `skip` (optional, default=0): Number of records to skip
-- `limit` (optional, default=100, max=1000): Maximum records to return
+**Параметры запроса:**
+- `skip` (опционально, по умолчанию=0): Количество записей для пропуска
+- `limit` (опционально, по умолчанию=100, макс=1000): Максимальное количество возвращаемых записей
 
-**Response:**
+**Ответ:**
 ```json
 [
   {
@@ -97,16 +97,16 @@ Get list of all farms with pagination.
 
 ### POST /api/farms
 
-Create a new farm (admin only).
+Создать новую ферму (только администратор).
 
-**Request:**
+**Запрос:**
 ```json
 {
   "name": "Новая ферма"
 }
 ```
 
-**Response:**
+**Ответ:**
 ```json
 {
   "id": 4,
@@ -114,25 +114,25 @@ Create a new farm (admin only).
 }
 ```
 
-**Status Codes:**
-- `200 OK` - Created successfully
-- `403 Forbidden` - Not admin
-- `401 Unauthorized` - Not authenticated
+**Коды статуса:**
+- `200 OK` - Создано успешно
+- `403 Forbidden` - Нет прав администратора
+- `401 Unauthorized` - Не аутентифицирован
 
 ---
 
-## Buildings
+## Корпуса
 
 ### GET /api/buildings
 
-Get list of buildings with optional filtering and pagination.
+Получить список корпусов с опциональной фильтрацией и пагинацией.
 
-**Query Parameters:**
-- `farm_id` (optional): Filter by farm ID
-- `skip` (optional, default=0): Number of records to skip
-- `limit` (optional, default=100, max=1000): Maximum records to return
+**Параметры запроса:**
+- `farm_id` (опционально): Фильтровать по ID фермы
+- `skip` (опционально, по умолчанию=0): Количество записей для пропуска
+- `limit` (опционально, по умолчанию=100, макс=1000): Максимальное количество возвращаемых записей
 
-**Response:**
+**Ответ:**
 ```json
 [
   {
@@ -152,9 +152,9 @@ Get list of buildings with optional filtering and pagination.
 
 ### POST /api/buildings
 
-Create a new building (admin only).
+Создать новый корпус (только администратор).
 
-**Request:**
+**Запрос:**
 ```json
 {
   "name": "Новый корпус",
@@ -162,7 +162,7 @@ Create a new building (admin only).
 }
 ```
 
-**Response:**
+**Ответ:**
 ```json
 {
   "id": 10,
@@ -171,27 +171,27 @@ Create a new building (admin only).
 }
 ```
 
-**Status Codes:**
-- `200 OK` - Created successfully
-- `403 Forbidden` - Not admin
-- `404 Not Found` - Farm not found
-- `401 Unauthorized` - Not authenticated
+**Коды статуса:**
+- `200 OK` - Создано успешно
+- `403 Forbidden` - Нет прав администратора
+- `404 Not Found` - Ферма не найдена
+- `401 Unauthorized` - Не аутентифицирован
 
 ---
 
-## Control Points
+## Точки контроля
 
 ### GET /api/control-points/
 
-Get list of control points with filtering and pagination.
+Получить список точек контроля с фильтрацией и пагинацией.
 
-**Query Parameters:**
-- `farm_ids` (optional): Comma-separated farm IDs (e.g., "1,2,3")
-- `building_ids` (optional): Comma-separated building IDs
-- `skip` (optional, default=0): Number of records to skip
-- `limit` (optional, default=100, max=1000): Maximum records to return
+**Параметры запроса:**
+- `farm_ids` (опционально): ID ферм через запятую (например, "1,2,3")
+- `building_ids` (опционально): ID корпусов через запятую
+- `skip` (опционально, по умолчанию=0): Количество записей для пропуска
+- `limit` (опционально, по умолчанию=100, макс=1000): Максимальное количество возвращаемых записей
 
-**Response:**
+**Ответ:**
 ```json
 [
   {
@@ -210,9 +210,9 @@ Get list of control points with filtering and pagination.
 
 ### POST /api/control-points/
 
-Create a new control point.
+Создать новую точку контроля.
 
-**Request:**
+**Запрос:**
 ```json
 {
   "name": "Точка контроля 1",
@@ -222,7 +222,7 @@ Create a new control point.
 }
 ```
 
-**Response:**
+**Ответ:**
 ```json
 {
   "id": 7,
@@ -237,9 +237,9 @@ Create a new control point.
 
 ### POST /api/control-points/full
 
-Create a complete structure (farm/building/control point) by names (admin only).
+Создать полную структуру (ферма/корпус/точка) по названиям (только администратор).
 
-**Request:**
+**Запрос:**
 ```json
 {
   "farm_name": "Ферма №5",
@@ -248,7 +248,7 @@ Create a complete structure (farm/building/control point) by names (admin only).
 }
 ```
 
-**Response:**
+**Ответ:**
 ```json
 {
   "id": 8,
@@ -259,18 +259,18 @@ Create a complete structure (farm/building/control point) by names (admin only).
 }
 ```
 
-**Notes:**
-- Creates farm if it doesn't exist
-- Creates building if it doesn't exist in that farm
-- Always creates new control point
+**Примечания:**
+- Создаёт ферму, если её нет
+- Создаёт корпус, если его нет в этой ферме
+- Всегда создаёт новую точку контроля
 
 ---
 
 ### GET /api/control-points/{id}
 
-Get a specific control point by ID.
+Получить конкретную точку контроля по ID.
 
-**Response:**
+**Ответ:**
 ```json
 {
   "id": 1,
@@ -281,22 +281,22 @@ Get a specific control point by ID.
 }
 ```
 
-**Status Codes:**
-- `200 OK` - Success
-- `404 Not Found` - Control point not found
+**Коды статуса:**
+- `200 OK` - Успешно
+- `404 Not Found` - Точка контроля не найдена
 
 ---
 
-## Cameras
+## Камеры
 
 ### GET /api/cameras/
 
-Get list of cameras with optional filtering.
+Получить список камер с опциональной фильтрацией.
 
-**Query Parameters:**
-- `control_point_id` (optional): Filter by control point ID
+**Параметры запроса:**
+- `control_point_id` (опционально): Фильтровать по ID точки контроля
 
-**Response:**
+**Ответ:**
 ```json
 [
   {
@@ -312,9 +312,9 @@ Get list of cameras with optional filtering.
 
 ### POST /api/cameras/
 
-Create a new camera.
+Создать новую камеру.
 
-**Request:**
+**Запрос:**
 ```json
 {
   "name": "Новая камера",
@@ -323,7 +323,7 @@ Create a new camera.
 }
 ```
 
-**Response:**
+**Ответ:**
 ```json
 {
   "id": 5,
@@ -337,28 +337,28 @@ Create a new camera.
 
 ### DELETE /api/cameras/{id}
 
-Delete a camera by ID.
+Удалить камеру по ID.
 
-**Response:**
+**Ответ:**
 ```json
 {
-  "message": "Camera deleted successfully"
+  "message": "Камера удалена успешно"
 }
 ```
 
-**Status Codes:**
-- `200 OK` - Deleted successfully
-- `404 Not Found` - Camera not found
+**Коды статуса:**
+- `200 OK` - Удалено успешно
+- `404 Not Found` - Камера не найдена
 
 ---
 
-## Reports
+## Отчёты
 
 ### POST /api/reports/generate
 
-Generate a report with stub chart data.
+Создать отчёт с данными графиков.
 
-**Request:**
+**Запрос:**
 ```json
 {
   "farm_ids": [1, 2],
@@ -370,7 +370,7 @@ Generate a report with stub chart data.
 }
 ```
 
-**Response:**
+**Ответ:**
 ```json
 {
   "charts": [
@@ -392,9 +392,9 @@ Generate a report with stub chart data.
 
 ### GET /api/reports/alert
 
-Get critical alerts (stub).
+Получить критические алерты.
 
-**Response:**
+**Ответ:**
 ```json
 {
   "status": "critical",
@@ -404,13 +404,13 @@ Get critical alerts (stub).
 
 ---
 
-## Health Check
+## Проверка здоровья
 
 ### GET /health
 
-Check if the API is running.
+Проверить, работает ли API.
 
-**Response:**
+**Ответ:**
 ```json
 {
   "status": "healthy"
@@ -419,39 +419,39 @@ Check if the API is running.
 
 ---
 
-## Error Responses
+## Ошибочные ответы
 
-All endpoints may return error responses in this format:
+Все endpoints могут возвращать ошибки в формате:
 
 ```json
 {
-  "detail": "Error message"
+  "detail": "Сообщение об ошибке"
 }
 ```
 
-Common status codes:
-- `400 Bad Request` - Invalid input data
-- `401 Unauthorized` - Not authenticated
-- `403 Forbidden` - Insufficient permissions
-- `404 Not Found` - Resource not found
-- `422 Unprocessable Entity` - Validation error
-- `429 Too Many Requests` - Rate limit exceeded
-- `500 Internal Server Error` - Server error
+Часто встречающиеся коды статуса:
+- `400 Bad Request` - Неверные входные данные
+- `401 Unauthorized` - Не аутентифицирован
+- `403 Forbidden` - Недостаточно прав
+- `404 Not Found` - Ресурс не найден
+- `422 Unprocessable Entity` - Ошибка валидации
+- `429 Too Many Requests` - Превышен лимит запросов
+- `500 Internal Server Error` - Ошибка сервера
 
 ---
 
-## Rate Limiting
+## Ограничение частоты запросов
 
-- Development: 1000 requests per minute per IP
-- Production: 100 requests per minute per IP
+- Разработка: 1000 запросов в минуту на IP
+- Продакшен: 100 запросов в минуту на IP
 
-When rate limit is exceeded, you'll receive a `429` response with `Retry-After` header.
+При превышении лимита вы получите ответ `429` с заголовком `Retry-After`.
 
 ---
 
-## Security Headers
+## Заголовки безопасности
 
-All responses include these security headers:
+Все ответы включают эти заголовки безопасности:
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
 - `X-XSS-Protection: 1; mode=block`

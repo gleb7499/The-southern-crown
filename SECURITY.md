@@ -1,52 +1,52 @@
-# Security Guidelines
+# Руководство по безопасности
 
-## Current Security Features
+## Текущие функции безопасности
 
-### ✅ Implemented
+### ✅ Реализованные
 
-1. **Authentication**
-   - JWT tokens in HttpOnly cookies
-   - Secure flag enabled in production
-   - 24-hour token expiry
-   - Bcrypt password hashing
+1. **Аутентификация**
+   - JWT токены в HttpOnly cookies
+   - Флаг Secure включен в продакшене
+   - Срок действия токена 24 часа
+   - Хеширование паролей через Bcrypt
 
-2. **Security Headers**
+2. **Заголовки безопасности**
    - X-Frame-Options: DENY
    - X-Content-Type-Options: nosniff
    - X-XSS-Protection: 1; mode=block
    - Referrer-Policy: strict-origin-when-cross-origin
 
-3. **Rate Limiting**
-   - In-memory rate limiting (development)
-   - 100 requests/minute per IP (production)
-   - 1000 requests/minute per IP (development)
+3. **Ограничение частоты запросов**
+   - In-memory ограничение (разработка)
+   - 100 запросов/минуту на IP (продакшен)
+   - 1000 запросов/минуту на IP (разработка)
 
-4. **Access Control**
-   - RBAC with admin checks
-   - Authentication required on all endpoints (except login)
-   - Proper 401/403 status codes
+4. **Контроль доступа**
+   - RBAC с проверками администратора
+   - Аутентификация требуется для всех endpoints (кроме login)
+   - Правильные коды статуса 401/403
 
-5. **Input Validation**
-   - Pydantic validation on all endpoints
-   - SQL injection prevention (SQLAlchemy ORM)
-   - Parameter sanitization
+5. **Валидация входных данных**
+   - Pydantic валидация для всех endpoints
+   - Предотвращение SQL injection (SQLAlchemy ORM)
+   - Санитизация параметров
 
-6. **Logging**
-   - Authentication attempts logged
-   - Failed login attempts tracked
-   - Security events recorded
+6. **Логирование**
+   - Попытки аутентификации логируются
+   - Отслеживание неудачных попыток входа
+   - Запись событий безопасности
 
 ---
 
-## ⚠️ Known Limitations (MVP)
+## ⚠️ Известные ограничения (MVP)
 
-### 1. Secret Key Management
+### 1. Управление секретным ключом
 
-**Current State:**
-- Default SECRET_KEY is hardcoded in config.py
-- Must be changed via environment variable in production
+**Текущее состояние:**
+- SECRET_KEY по умолчанию жёстко закодирован в config.py
+- Должен быть изменён через переменную окружения в продакшене
 
-**Production Recommendation:**
+**Рекомендация для продакшена:**
 ```bash
 # Generate a secure key
 openssl rand -hex 32
@@ -55,24 +55,24 @@ openssl rand -hex 32
 export SECRET_KEY="your-generated-key-here"
 ```
 
-**Why This Matters:**
-- SECRET_KEY must remain consistent across restarts
-- Changing the key invalidates all JWT tokens
-- Hardcoded keys are a security vulnerability
+**Почему это важно:**
+- SECRET_KEY должен оставаться неизменным между перезагрузками
+- Изменение ключа аннулирует все JWT токены
+- Жёстко закодированные ключи - уязвимость безопасности
 
 ---
 
-### 2. Rate Limiting
+### 2. Ограничение частоты запросов
 
-**Current State:**
-- In-memory rate limiting using Python dictionary
-- Works only for single-process deployments
-- State lost on restart
-- Memory usage grows with unique IPs
+**Текущее состояние:**
+- In-memory ограничение частоты с использованием словаря Python
+- Работает только для однопроцессных deployments
+- Состояние теряется при перезагрузке
+- Использование памяти растёт с количеством уникальных IP
 
-**Production Recommendations:**
+**Рекомендации для продакшена:**
 
-#### Option 1: Redis-Based Rate Limiting
+#### Вариант 1: Ограничение на основе Redis
 ```bash
 pip install slowapi redis
 ```
@@ -86,53 +86,53 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 ```
 
-#### Option 2: API Gateway
-Use nginx, AWS API Gateway, or similar for rate limiting at infrastructure level.
+#### Вариант 2: API Gateway
+Используйте nginx, AWS API Gateway или подобное для ограничения частоты на уровне инфраструктуры.
 
 ---
 
-### 3. Token Management
+### 3. Управление токенами
 
-**Current State:**
-- No token refresh mechanism
-- No token revocation/blacklist
-- Logout doesn't invalidate tokens server-side
+**Текущее состояние:**
+- Нет механизма обновления токенов
+- Нет отзыва токенов/чёрного списка
+- Выход не аннулирует токены на стороне сервера
 
-**Production Recommendations:**
-- Implement refresh token pattern
-- Use Redis for token blacklist
-- Add token revocation endpoint
-- Shorter access token lifetime (15 minutes) with refresh tokens
-
----
-
-### 4. CORS Configuration
-
-**Current State:**
-- Allows configured origins only
-- Credentials enabled
-- All HTTP methods allowed
-
-**Production Checklist:**
-- [ ] Update ALLOWED_ORIGINS for production domains
-- [ ] Consider restricting HTTP methods if needed
-- [ ] Verify CORS settings with production frontend URL
+**Рекомендации для продакшена:**
+- Реализовать паттерн обновления токенов
+- Использовать Redis для чёрного списка токенов
+- Добавить endpoint отзыва токенов
+- Более короткое время жизни access token (15 минут) с refresh токенами
 
 ---
 
-### 5. Database Security
+### 4. Конфигурация CORS
 
-**Current State:**
-- SQLite by default (development)
-- No encryption at rest
-- Connection strings in environment variables
+**Текущее состояние:**
+- Допускает только настроенные источники
+- Учётные данные включены
+- Все HTTP методы разрешены
 
-**Production Recommendations:**
-- Use PostgreSQL with SSL
-- Enable encryption at rest
-- Use connection pooling
-- Regular backups
-- Parameterized queries (already using ORM)
+**Контрольный список для продакшена:**
+- [ ] Обновить ALLOWED_ORIGINS для production домена
+- [ ] Рассмотреть ограничение HTTP методов если необходимо
+- [ ] Проверить CORS параметры с production URL фронтенда
+
+---
+
+### 5. Безопасность базы данных
+
+**Текущее состояние:**
+- SQLite по умолчанию (разработка)
+- Нет шифрования в покое
+- Строки подключения в переменных окружения
+
+**Рекомендации для продакшена:**
+- Использовать PostgreSQL с SSL
+- Включить шифрование в покое
+- Использовать connection pooling
+- Регулярные резервные копии
+- Параметризованные запросы (уже используется ORM)
 
 ---
 
@@ -150,91 +150,105 @@ Use nginx, AWS API Gateway, or similar for rate limiting at infrastructure level
 
 ---
 
-## 🔒 Production Deployment Checklist
+### 6. HTTPS / TLS
 
-### Environment
+**Текущее состояние:**
+- Только HTTP в разработке
+- Флаг Secure для cookies включен в продакшене
 
-- [ ] Change SECRET_KEY to secure random value
-- [ ] Set ENV=production
-- [ ] Set DEBUG=false
-- [ ] Configure allowed origins for CORS
-- [ ] Use PostgreSQL instead of SQLite
-- [ ] Enable database SSL connections
+**Требования для продакшена:**
+- [ ] Включить HTTPS/TLS
+- [ ] Использовать валидный SSL сертификат (рекомендуется Let's Encrypt)
+- [ ] Включить HSTS заголовок
+- [ ] Перенаправлять HTTP на HTTPS
 
-### Infrastructure
+---
 
-- [ ] Enable HTTPS with valid certificate
-- [ ] Set up Redis for rate limiting
-- [ ] Configure firewall rules
-- [ ] Set up log aggregation
-- [ ] Enable monitoring and alerting
-- [ ] Regular security updates
+## 🔒 Контрольный список для production deployment
 
-### Application
+### Окружение
 
-- [ ] Review and test all endpoints
-- [ ] Verify authentication on all routes
-- [ ] Test rate limiting
-- [ ] Validate input sanitization
-- [ ] Run security scanners (CodeQL, etc.)
+- [ ] Изменить SECRET_KEY на безопасное случайное значение
+- [ ] Установить ENV=production
+- [ ] Установить DEBUG=false
+- [ ] Настроить разрешённые источники для CORS
+- [ ] Использовать PostgreSQL вместо SQLite
+- [ ] Включить SSL соединения для базы данных
+
+### Инфраструктура
+
+- [ ] Включить HTTPS с валидным сертификатом
+- [ ] Настроить Redis для ограничения частоты запросов
+- [ ] Настроить правила брандмауэра
+- [ ] Установить агрегацию логов
+- [ ] Включить мониторинг и оповещения
+- [ ] Регулярные обновления безопасности
+
+### Приложение
+
+- [ ] Пересмотреть и протестировать все endpoints
+- [ ] Проверить аутентификацию на всех маршрутах
+- [ ] Протестировать ограничение частоты запросов
+- [ ] Проверить санитизацию входных данных
+- [ ] Запустить сканеры безопасности (CodeQL, и т.д.)
 - [ ] Penetration testing
 
-### Operations
+### Операции
 
-- [ ] Regular backups
-- [ ] Incident response plan
-- [ ] Security patch process
-- [ ] Access logging and monitoring
-- [ ] Regular security audits
-
----
-
-## 🚨 Vulnerability Reporting
-
-If you discover a security vulnerability, please:
-
-1. **DO NOT** open a public issue
-2. Email the security contact: [your-email@example.com]
-3. Include:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Suggested fix (if any)
+- [ ] Регулярные резервные копии
+- [ ] План реагирования на инциденты
+- [ ] Процесс патчей безопасности
+- [ ] Логирование доступа и мониторинг
+- [ ] Регулярные аудиты безопасности
 
 ---
 
-## 📚 Security Resources
+## 🚨 Отчёт об уязвимостях
 
-### Tools Used
-- **CodeQL**: Static analysis for security vulnerabilities
-- **Pydantic**: Input validation
-- **SQLAlchemy**: ORM for SQL injection prevention
-- **Passlib/Bcrypt**: Password hashing
+Если вы обнаружили уязвимость безопасности:
 
-### Recommended Reading
+1. **НЕ** открывайте публичный issue
+2. Отправьте письмо на адрес безопасности: [your-email@example.com]
+3. Включите:
+   - Описание уязвимости
+   - Шаги для воспроизведения
+   - Потенциальное воздействие
+   - Предлагаемое исправление (если есть)
+
+---
+
+## 📚 Ресурсы по безопасности
+
+### Используемые инструменты
+- **CodeQL**: Статический анализ для поиска уязвимостей безопасности
+- **Pydantic**: Валидация входных данных
+- **SQLAlchemy**: ORM для предотвращения SQL injection
+- **Passlib/Bcrypt**: Хеширование паролей
+
+### Рекомендуемое чтение
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [FastAPI Security](https://fastapi.tiangolo.com/tutorial/security/)
 - [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
 
 ---
 
-## 📝 Security Summary
+## 📝 Итоговая информация о безопасности
 
-**Current Status: Development/MVP**
+**Текущий статус: Разработка/MVP**
 
-The application implements basic security features suitable for development and testing. Before production deployment, address the known limitations listed above, particularly:
+Приложение реализует базовые функции безопасности, подходящие для разработки и тестирования. Перед production deployment решите известные ограничения, указанные выше, в особенности:
 
-1. SECRET_KEY management
-2. Rate limiting infrastructure
-3. Token refresh mechanism
-4. HTTPS/TLS setup
-5. Production database configuration
+1. Управление SECRET_KEY
+2. Инфраструктура ограничения частоты запросов
+3. Механизм обновления токенов
+4. Настройка HTTPS/TLS
+5. Конфигурация production базы данных
 
-**Security Rating: ⭐⭐⭐☆☆**
-- ✅ Good foundation
-- ✅ Authentication working
-- ✅ Input validation
-- ⚠️ Needs production hardening
-- ⚠️ Some known limitations
+**Рейтинг безопасности: ⭐⭐⭐☆☆**
+- ✅ Хорошая основа
+- ✅ Аутентификация работает
+- ✅ Валидация входных данных
+- ⚠️ Требуется production hardening
+- ⚠️ Некоторые известные ограничения
 
-Follow the production checklist to achieve enterprise-grade security.
+Следуйте контрольному списку production чтобы достичь enterprise-grade безопасности.

@@ -1,119 +1,119 @@
-# The Southern Crown - AI Coding Instructions
+# The Southern Crown - Инструкции для AI программирования
 
-## Project Overview
-Farm management admin panel with FastAPI backend and React frontend. Manages hierarchical structure: Farm → Building → Control Point → Camera. Russian language UI/documentation.
+## Обзор проекта
+Административная панель управления фермой с FastAPI бэкендом и React фронтендом. Управляет иерархической структурой: Ферма → Корпус → Точка контроля → Камера. Русский язык UI/документация.
 
-## Architecture
+## Архитектура
 
 ### Backend (FastAPI + SQLAlchemy + SQLite)
-- **Entry point**: [backend/app/main.py](backend/app/main.py) - initializes FastAPI app, creates DB tables on startup
-- **Database models** in [backend/app/models/](backend/app/models/): `Farm`, `Building`, `ControlPoint`, `Camera`, `User`
-- **Schemas** in [backend/app/schemas/](backend/app/schemas/): Pydantic models for request/response validation
-- **API routes** in [backend/app/api/](backend/app/api/): `auth`, `farms`, `control_points`, `cameras`, `reports`
-- **Authentication**: Cookie-based JWT tokens (see [backend/app/api/deps.py](backend/app/api/deps.py#L7-L38))
-  - Auth logic uses `get_current_user` dependency that reads token from cookies
-  - Tokens stored in `access_token` cookie (httponly, samesite=lax, 24h expiry)
-  - No Bearer token headers - always use cookies
+- **Точка входа**: [backend/app/main.py](backend/app/main.py) - инициализирует FastAPI приложение, создаёт таблицы БД при запуске
+- **Модели базы данных** в [backend/app/models/](backend/app/models/): `Farm`, `Building`, `ControlPoint`, `Camera`, `User`
+- **Схемы** в [backend/app/schemas/](backend/app/schemas/): Pydantic модели для валидации запросов/ответов
+- **API маршруты** в [backend/app/api/](backend/app/api/): `auth`, `farms`, `control_points`, `cameras`, `reports`
+- **Аутентификация**: JWT токены на основе cookies (см. [backend/app/api/deps.py](backend/app/api/deps.py#L7-L38))
+  - Логика аутентификации использует `get_current_user` зависимость, которая читает токен из cookies
+  - Токены хранятся в `access_token` cookie (httponly, samesite=lax, 24h срок действия)
+  - Нет Bearer token заголовков - всегда используются cookies
 
 ### Frontend (React 18 + Vite + React Router)
-- **Pages** in [frontend/src/pages/](frontend/src/pages/): `Login`, `General`, `Reports`, `Settings`
-- **API client** at [frontend/src/services/api.js](frontend/src/services/api.js):
-  - Axios with `withCredentials: true` for cookie-based auth
-  - Global 401 interceptor redirects to `/login`
-  - Empty `baseURL` - relies on Vite proxy in dev
-- **Routing**: All dashboard pages use `/dashboard/*` prefix
-- **State management**: Local component state with `useState` - no Redux/Context
+- **Страницы** в [frontend/src/pages/](frontend/src/pages/): `Login`, `General`, `Reports`, `Settings`
+- **API клиент** в [frontend/src/services/api.js](frontend/src/services/api.js):
+  - Axios с `withCredentials: true` для аутентификации на основе cookies
+  - Глобальный 401 перехватчик перенаправляет на `/login`
+  - Пустой `baseURL` - опирается на Vite прокси в разработке
+- **Маршрутизация**: Все страницы dashboard используют префикс `/dashboard/*`
+- **Управление состоянием**: Локальное состояние компонента с `useState` - нет Redux/Context
 
-## Database Schema
+## Схема базы данных
 ```
-Farm (1) → (N) Building (1) → (N) ControlPoint (1) → (N) Camera
-User (separate table for auth)
+Ферма (1) → (N) Корпус (1) → (N) Точка контроля (1) → (N) Камера
+Пользователь (отдельная таблица для аутентификации)
 ```
-Key relationships in [backend/app/models/farm.py](backend/app/models/farm.py):
-- SQLAlchemy `relationship()` with bidirectional `back_populates`
-- `ControlPoint` has `day_of_development` and `average_deviation` tracking fields
+Ключевые отношения в [backend/app/models/farm.py](backend/app/models/farm.py):
+- SQLAlchemy `relationship()` с двусторонним `back_populates`
+- `ControlPoint` имеет поля отслеживания `day_of_development` и `average_deviation`
 
-## Development Workflows
+## Рабочие процессы разработки
 
-### Run entire stack:
+### Запуск всего стека:
 ```bash
 docker compose up --build
 ```
-- Backend: http://localhost:8000 (API docs at `/docs`)
+- Backend: http://localhost:8000 (API документация в `/docs`)
 - Frontend: http://localhost:5173
-- Default login: `admin@example.com` / `admin123`
+- Вход по умолчанию: `admin@example.com` / `admin123`
 
-### Backend only (Python):
+### Только Backend (Python):
 ```bash
 cd backend
 pip install -r requirements.txt
-python -m app.init_db  # Creates DB and seed data
+python -m app.init_db  # Создаёт БД и seed данные
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Frontend only (Node.js):
+### Только Frontend (Node.js)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-### Database initialization:
-[backend/app/init_db.py](backend/app/init_db.py) creates:
-- Admin user (email: admin@example.com, password: admin123)
-- 3 sample farms with buildings, control points, and cameras
-- Run explicitly with `python -m app.init_db` or automatically via Dockerfile CMD
+### Инициализация базы данных
+[backend/app/init_db.py](backend/app/init_db.py) создаёт:
+- Администратора (email: admin@example.com, password: admin123)
+- 3 примера ферм с корпусами, точками контроля и камерами
+- Запустить явно с `python -m app.init_db` или автоматически через Dockerfile CMD
 
-## Key Conventions
+## Ключевые соглашения
 
-### Backend Patterns
-1. **Dependency injection**: Use `Depends(get_db)` for DB sessions, `Depends(get_current_user)` for auth
-2. **Router structure**: Each domain has own router in `api/` folder with consistent naming (plural nouns)
-3. **Response models**: Always specify `response_model` in route decorators for Pydantic validation
-4. **Query filtering**: API endpoints accept comma-separated IDs (`?farm_ids=1,2,3`) parsed server-side
-5. **Configuration**: Centralized in [backend/app/core/config.py](backend/app/core/config.py) using `pydantic-settings`
+### Паттерны Backend
+1. **Внедрение зависимостей**: Используйте `Depends(get_db)` для сессий БД, `Depends(get_current_user)` для аутентификации
+2. **Структура маршрутизатора**: Каждый домен имеет собственный маршрутизатор в папке `api/` с согласованным названием (множественные существительные)
+3. **Модели ответов**: Всегда указывайте `response_model` в декораторах маршрутов для валидации Pydantic
+4. **Фильтрация запросов**: API endpoints принимают ID через запятую (`?farm_ids=1,2,3`) распарсенные на сервере
+5. **Конфигурация**: Централизована в [backend/app/core/config.py](backend/app/core/config.py) используя `pydantic-settings`
 
-### Frontend Patterns
-1. **Component structure**: Modals in `components/`, pages consume them directly
-2. **API calls**: Destructure from domain-specific API objects (`farmsAPI`, `controlPointsAPI`, etc.)
-3. **Error handling**: Let global axios interceptor handle 401s; show errors via local state
-4. **Form submission**: Controlled components with `useState` for form data
-5. **Styling**: Single CSS file at [frontend/src/styles/App.css](frontend/src/styles/App.css) - no CSS modules/styled-components
+### Паттерны Frontend
+1. **Структура компонента**: Модальные окна в `components/`, страницы потребляют их напрямую
+2. **API вызовы**: Деструктурируйте из доменно-специфичных API объектов (`farmsAPI`, `controlPointsAPI`, и т.д.)
+3. **Обработка ошибок**: Позвольте глобальному axios перехватчику обрабатывать 401s; показывайте ошибки через локальное состояние
+4. **Отправка формы**: Контролируемые компоненты с `useState` для данных формы
+5. **Стилизация**: Единственный CSS файл в [frontend/src/styles/App.css](frontend/src/styles/App.css) - нет CSS модулей/styled-components
 
-### Code Style
-- **Backend**: Python with type hints (e.g., `def get_me(current_user: User = Depends(...)`) 
-- **Frontend**: Functional components with hooks; no class components
-- **Naming**: Russian in UI strings/comments, English in code identifiers
-- **Imports**: Backend uses absolute imports with `app.` prefix
+### Стиль кода
+- **Backend**: Python с type hints (например, `def get_me(current_user: User = Depends(...)`)
+- **Frontend**: Функциональные компоненты с hooks; нет class компонентов
+- **Названия**: Русский язык в UI строках/комментариях, английский в идентификаторах кода
+- **Импорты**: Backend использует абсолютные импорты с префиксом `app.`
 
-## Critical Integration Points
+## Критические точки интеграции
 
-### CORS Configuration
-[backend/app/main.py](backend/app/main.py#L9-L15): Allows `localhost:5173` and `localhost:3000`. Update when changing ports.
+### Конфигурация CORS
+[backend/app/main.py](backend/app/main.py#L9-L15): Позволяет `localhost:5173` и `localhost:3000`. Обновите при изменении портов.
 
-### API URL Resolution
-Frontend uses empty `baseURL` in axios config - relies on:
-- Docker: Both services on same `app-network`, frontend proxies to `backend:8000`
-- Local dev: Configure Vite proxy or use full URLs
+### Разрешение API URL
+Frontend использует пустой `baseURL` в конфиге axios - полагается на:
+- Docker: Оба сервиса в одной `app-network`, frontend прокси на `backend:8000`
+- Локальная разработка: Настройте Vite proxy или используйте полные URLs
 
-### Database Persistence
-SQLite file location:
-- Docker: `/app/data/southern_crown.db` (volume mounted as `backend-data`)
-- Local: `./southern_crown.db` in backend directory
+### Сохранение базы данных
+Расположение файла SQLite:
+- Docker: `/app/data/southern_crown.db` (volume монтирован как `backend-data`)
+- Локальная: `./southern_crown.db` в backend директории
 
-## Common Tasks
+## Типичные задачи
 
-**Add new endpoint**: 
-1. Create route in `backend/app/api/<domain>.py`
-2. Add Pydantic schemas in `backend/app/schemas/<domain>.py`
-3. Add API method to `frontend/src/services/api.js` under appropriate domain object
+**Добавить новый endpoint**:
+1. Создайте маршрут в `backend/app/api/<domain>.py`
+2. Добавьте Pydantic схемы в `backend/app/schemas/<domain>.py`
+3. Добавьте API метод в `frontend/src/services/api.js` под соответствующий доменный объект
 
-**Add new model field**:
-1. Update SQLAlchemy model in `backend/app/models/`
-2. Update Pydantic schemas in `backend/app/schemas/`
-3. Drop/recreate DB or write migration (no Alembic setup currently)
+**Добавить новое поле модели**:
+1. Обновите SQLAlchemy модель в `backend/app/models/`
+2. Обновите Pydantic схемы в `backend/app/schemas/`
+3. Удалите/пересоздайте БД или напишите миграцию (Alembic не настроен в настоящее время)
 
-**Add new page**:
-1. Create component in `frontend/src/pages/`
-2. Add route in `frontend/src/App.jsx`
-3. Add sidebar link in `frontend/src/components/Sidebar.jsx`
+**Добавить новую страницу**:
+1. Создайте компонент в `frontend/src/pages/`
+2. Добавьте маршрут в `frontend/src/App.jsx`
+3. Добавьте ссылку в боковой панели в `frontend/src/components/Sidebar.jsx`
