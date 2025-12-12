@@ -35,7 +35,9 @@ def get_control_points(
         ControlPointModel,
         Building.name.label("building_name"),
         Farm.name.label("farm_name")
-    ).join(Building).join(Farm)
+    ).select_from(ControlPointModel
+    ).join(Building, ControlPointModel.building_id == Building.id
+    ).join(Farm, Building.farm_id == Farm.id)
     
     if farm_ids:
         try:
