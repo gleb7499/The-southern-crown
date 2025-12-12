@@ -11,7 +11,9 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Не редиректим на /login при ошибке авторизации на странице логина
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    if (error.response?.status === 401 && !isLoginRequest) {
       window.location.href = '/login';
     }
     return Promise.reject(error);
