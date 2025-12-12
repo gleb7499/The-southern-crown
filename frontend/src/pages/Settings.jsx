@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import CameraPreviewModal from '../components/CameraPreviewModal';
 import CalendarModal from '../components/CalendarModal';
+import Loading from '../components/Loading';
 import { farmsAPI, controlPointsAPI, camerasAPI } from '../services/api';
 
 export default function Settings() {
   const [farms, setFarms] = useState([]);
   const [buildings, setBuildings] = useState([]);
   const [cameras, setCameras] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   
   const [newPointData, setNewPointData] = useState({
     farmName: '',
@@ -32,6 +35,7 @@ export default function Settings() {
 
   const loadData = async () => {
     try {
+      setLoading(true);
       const [farmsRes, camerasRes] = await Promise.all([
         farmsAPI.getFarms(),
         camerasAPI.getCameras()
@@ -40,6 +44,9 @@ export default function Settings() {
       setCameras(camerasRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
+      alert('Ошибка при загрузке данных');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,6 +54,7 @@ export default function Settings() {
     e.preventDefault();
     
     try {
+      setSubmitting(true);
       await controlPointsAPI.createControlPointFull({
         farm_name: newPointData.farmName,
         building_name: newPointData.buildingName,
@@ -59,6 +67,8 @@ export default function Settings() {
     } catch (error) {
       console.error('Error creating control point:', error);
       alert('Ошибка при создании точки контроля');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -96,6 +106,14 @@ export default function Settings() {
     setShowCameraPreview(true);
   };
 
+  if (loading) {
+    return (
+      <Layout>
+        <Loading message="Загрузка настроек..." />
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <h1>Настройка</h1>
@@ -132,7 +150,13 @@ export default function Settings() {
               />
             </div>
           </div>
-          <button type="submit" className="btn btn-primary">Создать точку контроля</button>
+          <button 
+            type="submit" 
+            className="btn btn-primary"
+            disabled={submitting}
+          >
+            {submitting ? 'Создание...' : 'Создать точку контроля'}
+          </button>
         </form>
       </div>
 

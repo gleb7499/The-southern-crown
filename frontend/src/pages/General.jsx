@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import AlertModal from '../components/AlertModal';
+import Loading from '../components/Loading';
 import { farmsAPI, controlPointsAPI, reportsAPI } from '../services/api';
 
 export default function General() {
@@ -13,6 +14,8 @@ export default function General() {
   const [filteredPoints, setFilteredPoints] = useState([]);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [filtering, setFiltering] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -20,6 +23,7 @@ export default function General() {
 
   const loadInitialData = async () => {
     try {
+      setLoading(true);
       const [farmsRes, alertRes] = await Promise.all([
         farmsAPI.getFarms(),
         reportsAPI.getAlert()
@@ -33,6 +37,9 @@ export default function General() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
+      alert('Ошибка при загрузке данных');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,12 +72,24 @@ export default function General() {
 
   const handleFilter = async () => {
     try {
+      setFiltering(true);
       const res = await controlPointsAPI.getControlPoints(selectedFarms, selectedBuildings);
       setFilteredPoints(res.data);
     } catch (error) {
       console.error('Error filtering control points:', error);
+      alert('Ошибка при фильтрации точек контроля');
+    } finally {
+      setFiltering(false);
     }
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <Loading message="Загрузка данных..." />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -125,7 +144,13 @@ export default function General() {
           </select>
         </div>
         
-        <button className="btn btn-primary" onClick={handleFilter}>OK</button>
+        <button 
+          className="btn btn-primary" 
+          onClick={handleFilter}
+          disabled={filtering}
+        >
+          {filtering ? 'Загрузка...' : 'OK'}
+        </button>
       </div>
 
       <div className="input-fields">
