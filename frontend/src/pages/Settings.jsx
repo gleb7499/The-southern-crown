@@ -45,8 +45,21 @@ export default function Settings() {
 
   const handleCreatePoint = async (e) => {
     e.preventDefault();
-    alert(`Создание точки контроля: ${newPointData.farmName} / ${newPointData.buildingName} / ${newPointData.pointName}`);
-    setNewPointData({ farmName: '', buildingName: '', pointName: '' });
+    
+    try {
+      await controlPointsAPI.createControlPointFull({
+        farm_name: newPointData.farmName,
+        building_name: newPointData.buildingName,
+        control_point_name: newPointData.pointName
+      });
+      
+      alert(`Точка контроля успешно создана: ${newPointData.farmName} / ${newPointData.buildingName} / ${newPointData.pointName}`);
+      setNewPointData({ farmName: '', buildingName: '', pointName: '' });
+      loadData(); // Reload data to show updated lists
+    } catch (error) {
+      console.error('Error creating control point:', error);
+      alert('Ошибка при создании точки контроля');
+    }
   };
 
   const handleCreateCamera = async (e) => {
