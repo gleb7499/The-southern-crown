@@ -1,8 +1,7 @@
-version: '3.8'
-
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
     ports:
       - "8000:8000"
     volumes:
@@ -10,11 +9,23 @@ services:
       - backend-data:/app/data
     environment:
       - DATABASE_URL=sqlite:///./data/southern_crown.db
+      - ENV=development
+      - DEBUG=true
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
     networks:
       - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: development
     ports:
       - "5173:5173"
     volumes:
@@ -23,9 +34,11 @@ services:
     environment:
       - DOCKER_ENV=true
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app-network
+    restart: unless-stopped
 
 volumes:
   backend-data:

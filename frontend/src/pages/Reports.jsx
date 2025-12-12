@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import CalendarModal from '../components/CalendarModal';
 import ExportFormatModal from '../components/ExportFormatModal';
+import Loading from '../components/Loading';
 import { farmsAPI, controlPointsAPI, reportsAPI } from '../services/api';
 
 export default function Reports() {
@@ -17,6 +18,8 @@ export default function Reports() {
   const [endDate, setEndDate] = useState(null);
   const [selectingDate, setSelectingDate] = useState('');
   const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     loadFarms();
@@ -24,10 +27,14 @@ export default function Reports() {
 
   const loadFarms = async () => {
     try {
+      setLoading(true);
       const farmsRes = await farmsAPI.getFarms();
       setFarms(farmsRes.data);
     } catch (error) {
       console.error('Error loading farms:', error);
+      alert('Ошибка при загрузке данных');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,6 +70,7 @@ export default function Reports() {
 
   const handleGenerate = async () => {
     try {
+      setGenerating(true);
       const res = await reportsAPI.generate({
         farm_ids: selectedFarms,
         building_ids: selectedBuildings,
@@ -74,6 +82,9 @@ export default function Reports() {
       setReportData(res.data);
     } catch (error) {
       console.error('Error generating report:', error);
+      alert('Ошибка при генерации отчёта');
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -83,6 +94,14 @@ export default function Reports() {
     'единобразие',
     'стандартное отклонение'
   ];
+
+  if (loading) {
+    return (
+      <Layout>
+        <Loading message="Загрузка данных..." />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -164,9 +183,17 @@ export default function Reports() {
         </div>
         
         <div style={{ marginTop: '15px' }}>
-          <button className="btn btn-primary" onClick={handleGenerate}>Сформировать</button>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleGenerate}
+            disabled={generating}
+          >
+            {generating ? 'Генерация...' : 'Сформировать'}
+          </button>
         </div>
       </div>
+
+      {generating && <Loading message="Генерация отчёта..." />}
 
       <div className="charts-container">
         {reportData ? (
@@ -242,6 +269,7 @@ export default function Reports() {
       <ExportFormatModal
         isOpen={showExport}
         onClose={() => setShowExport(false)}
+        reportData={reportData}
       />
     </Layout>
   );

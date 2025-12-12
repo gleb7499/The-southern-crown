@@ -12,10 +12,17 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Basic validation
+    if (!email || !password) {
+      setShowErrorModal(true);
+      return;
+    }
+    
     try {
       await authAPI.login(email, password);
       navigate('/dashboard/general');
     } catch (error) {
+      console.error('Login error:', error);
       setShowErrorModal(true);
     }
   };
@@ -26,24 +33,34 @@ export default function Login() {
         <h1>Авторизация</h1>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Email</label>
+            <label htmlFor="email">Email</label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              aria-label="Email адрес"
+              aria-required="true"
               required
             />
           </div>
           <div className="form-group">
-            <label>Пароль</label>
+            <label htmlFor="password">Пароль</label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              aria-label="Пароль"
+              aria-required="true"
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary">
+          <button 
+            type="submit" 
+            className="btn btn-primary"
+            aria-label="Войти в систему"
+          >
             Войти
           </button>
         </form>

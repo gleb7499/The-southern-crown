@@ -39,6 +39,7 @@ export const controlPointsAPI = {
     return api.get('/api/control-points/', { params });
   },
   createControlPoint: (data) => api.post('/api/control-points/', data),
+  createControlPointFull: (data) => api.post('/api/control-points/full', data),
 };
 
 export const camerasAPI = {
