@@ -68,10 +68,13 @@ The-southern-crown/
 │   │   │   ├── cameras.py
 │   │   │   ├── control_points.py
 │   │   │   ├── farms.py
-│   │   │   └── reports.py
+│   │   │   ├── reports.py
+│   │   │   └── deps.py
 │   │   ├── core/         # Конфигурация и утилиты
 │   │   │   ├── config.py
 │   │   │   ├── database.py
+│   │   │   └── security.py
+│   │   ├── middleware/   # Middleware для безопасности
 │   │   │   └── security.py
 │   │   ├── models/       # SQLAlchemy модели
 │   │   │   ├── user.py
@@ -92,10 +95,13 @@ The-southern-crown/
 │   │   │   ├── Modal.jsx
 │   │   │   ├── AlertModal.jsx
 │   │   │   ├── CalendarModal.jsx
-│   │   │   ├── ExportFormatModal.jsx
 │   │   │   ├── CameraPreviewModal.jsx
-│   │   │   ├── Sidebar.jsx
-│   │   │   └── Layout.jsx
+│   │   │   ├── DataOutputModal.jsx
+│   │   │   ├── ErrorBoundary.jsx
+│   │   │   ├── ExportFormatModal.jsx
+│   │   │   ├── Loading.jsx
+│   │   │   ├── Layout.jsx
+│   │   │   └── Sidebar.jsx
 │   │   ├── pages/        # Страницы
 │   │   │   ├── Login.jsx
 │   │   │   ├── General.jsx
@@ -155,12 +161,15 @@ The-southern-crown/
 ### Фермы и корпуса
 
 - `GET /api/farms` - список ферм
+- `POST /api/farms` - создание фермы (администратор)
 - `GET /api/buildings` - список корпусов
+- `POST /api/buildings` - создание корпуса (администратор)
 
 ### Точки контроля
 
 - `GET /api/control-points/` - список точек с фильтрацией
 - `POST /api/control-points/` - создание точки
+- `POST /api/control-points/full` - создание полной структуры (администратор)
 - `GET /api/control-points/{id}` - получение точки
 
 ### Камеры
@@ -173,6 +182,10 @@ The-southern-crown/
 
 - `POST /api/reports/generate` - генерация отчёта
 - `GET /api/reports/alert` - получение алертов
+
+### Другое
+
+- `GET /health` - проверка здоровья API
 
 ## Архитектура и расширяемость
 
@@ -294,6 +307,12 @@ npm run build
 
 ## Реализованные улучшения
 
+Проект полностью документирован и готов к использованию. Подробнее читайте:
+
+- **[API.md](API.md)** - Полная документация всех API endpoints с примерами
+- **[SECURITY.md](SECURITY.md)** - Руководство по безопасности и production deployment
+- **[IMPROVEMENTS.md](IMPROVEMENTS.md)** - Итоговое резюме всех улучшений
+
 ### Безопасность
 ✅ Секретный ключ вынесен в переменные окружения  
 ✅ Заголовки безопасности (X-Frame-Options, CSP, и др.)  
@@ -303,9 +322,10 @@ npm run build
 
 ### API
 ✅ Пагинация на всех list endpoints  
-✅ Комплексная документация API (см. API.md)  
+✅ Комплексная документация API (см. [API.md](API.md))  
 ✅ Валидация входных параметров  
 ✅ Правильная обработка ошибок  
+✅ Health check endpoint (`GET /health`)  
 
 ### База данных
 ✅ Timestamps (created_at/updated_at) на всех моделях  
@@ -319,13 +339,14 @@ npm run build
 ✅ Валидация форм перед отправкой  
 ✅ ARIA метки для доступности  
 ✅ Экспорт отчётов в XLSX/CSV  
-✅ Модальное окно "Данные нового вывода" с полями ввода  
+✅ Модальное окно "Данные нового вывода" с полями ввода и календарём  
 
 ### Docker
 ✅ Multi-stage builds для меньшего размера образов  
 ✅ Health checks для контейнеров  
 ✅ Restart policies  
 ✅ Правильные зависимости сервисов  
+✅ Non-root user для безопасности  
 
 ## Известные ограничения (MVP)
 
