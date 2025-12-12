@@ -18,23 +18,28 @@ export default function General() {
   const [filtering, setFiltering] = useState(false);
 
   useEffect(() => {
+    // Show alert immediately before loading data
+    checkAlert();
     loadInitialData();
   }, []);
 
-  const loadInitialData = async () => {
+  const checkAlert = async () => {
     try {
-      setLoading(true);
-      const [farmsRes, alertRes] = await Promise.all([
-        farmsAPI.getFarms(),
-        reportsAPI.getAlert()
-      ]);
-      
-      setFarms(farmsRes.data);
-      
+      const alertRes = await reportsAPI.getAlert();
       if (alertRes.data.status === 'critical') {
         setAlertMessage(alertRes.data.message);
         setShowAlert(true);
       }
+    } catch (error) {
+      console.error('Error checking alert:', error);
+    }
+  };
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      const farmsRes = await farmsAPI.getFarms();
+      setFarms(farmsRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
       alert('Ошибка при загрузке данных');

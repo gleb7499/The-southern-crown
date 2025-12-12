@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import CameraPreviewModal from '../components/CameraPreviewModal';
-import CalendarModal from '../components/CalendarModal';
+import DataOutputModal from '../components/DataOutputModal';
 import Loading from '../components/Loading';
 import { farmsAPI, controlPointsAPI, camerasAPI } from '../services/api';
 
@@ -26,8 +26,8 @@ export default function Settings() {
   
   const [showCameraPreview, setShowCameraPreview] = useState(false);
   const [selectedCamera, setSelectedCamera] = useState(null);
-  const [showDataModal, setShowDataModal] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [showDataOutputModal, setShowDataOutputModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -255,12 +255,12 @@ export default function Settings() {
       </div>
 
       <div style={{ marginTop: '30px' }}>
-        <button className="btn btn-primary" onClick={() => setShowDataModal(true)}>
+        <button className="btn btn-primary" onClick={() => setShowImageModal(true)}>
           Вывести изображение
         </button>
         <button 
           className="btn" 
-          onClick={() => setShowCalendar(true)}
+          onClick={() => setShowDataOutputModal(true)}
           style={{ marginLeft: '10px' }}
         >
           Данные нового вывода
@@ -273,8 +273,8 @@ export default function Settings() {
         camera={selectedCamera}
       />
 
-      {showDataModal && (
-        <div className="modal-overlay" onClick={() => setShowDataModal(false)}>
+      {showImageModal && (
+        <div className="modal-overlay" onClick={() => setShowImageModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Вывести изображение</h2>
             <div style={{ 
@@ -290,7 +290,7 @@ export default function Settings() {
               <p>Заглушка вывода изображения</p>
             </div>
             <div className="modal-actions">
-              <button className="btn btn-primary" onClick={() => setShowDataModal(false)}>
+              <button className="btn btn-primary" onClick={() => setShowImageModal(false)}>
                 Закрыть
               </button>
             </div>
@@ -298,12 +298,9 @@ export default function Settings() {
         </div>
       )}
 
-      <CalendarModal
-        isOpen={showCalendar}
-        onClose={() => setShowCalendar(false)}
-        onSelect={(date) => {
-          alert(`Выбрана дата: ${date.toLocaleDateString('ru-RU')}`);
-        }}
+      <DataOutputModal
+        isOpen={showDataOutputModal}
+        onClose={() => setShowDataOutputModal(false)}
       />
     </Layout>
   );

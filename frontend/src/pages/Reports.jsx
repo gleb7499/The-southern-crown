@@ -269,6 +269,7 @@ export default function Reports() {
       <ExportFormatModal
         isOpen={showExport}
         onClose={() => setShowExport(false)}
+        reportData={reportData}
       />
     </Layout>
   );
