@@ -2,7 +2,6 @@ services:
   backend:
     build:
       context: ./backend
-      target: builder  # Use final stage, not builder
     ports:
       - "8000:8000"
     volumes:

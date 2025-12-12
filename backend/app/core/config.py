@@ -1,11 +1,12 @@
 from pydantic_settings import BaseSettings
 from typing import List
-import secrets
 
 
 class Settings(BaseSettings):
     # Security
-    SECRET_KEY: str = secrets.token_urlsafe(32)
+    # WARNING: Change SECRET_KEY in production! Set via environment variable.
+    # Generating random key here is only for development convenience.
+    SECRET_KEY: str = "CHANGE_THIS_TO_A_SECURE_SECRET_KEY_IN_PRODUCTION_AND_KEEP_IT_CONSISTENT"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     

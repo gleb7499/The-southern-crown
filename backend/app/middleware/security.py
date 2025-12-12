@@ -28,13 +28,28 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Simple rate limiting middleware"""
+    """
+    Simple in-memory rate limiting middleware.
+    
+    WARNING: This implementation has limitations:
+    - Not suitable for multi-process/multi-server deployments
+    - Memory usage grows with unique IPs
+    - State is lost on restart
+    
+    For production, consider:
+    - Redis-based rate limiting (e.g., slowapi with Redis backend)
+    - API Gateway rate limiting (e.g., nginx, AWS API Gateway)
+    - Dedicated rate limiting service
+    
+    This is sufficient for single-instance development/testing.
+    """
     
     def __init__(self, app, calls: int = 100, period: int = 60):
         super().__init__(app)
         self.calls = calls
         self.period = period
         self.clients: Dict[str, list] = defaultdict(list)
+        logger.warning("Using in-memory rate limiting - not suitable for production multi-instance deployments")
     
     async def dispatch(self, request: Request, call_next):
         client_ip = request.client.host
