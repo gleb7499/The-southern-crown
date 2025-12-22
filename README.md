@@ -314,6 +314,7 @@ npm run build
 - **[IMPROVEMENTS.md](IMPROVEMENTS.md)** - Итоговое резюме всех улучшений
 
 ### Безопасность
+
 ✅ Секретный ключ вынесен в переменные окружения  
 ✅ Заголовки безопасности (X-Frame-Options, CSP, и др.)  
 ✅ Rate limiting для предотвращения DoS атак  
@@ -321,6 +322,7 @@ npm run build
 ✅ Подробное логирование аутентификации  
 
 ### API
+
 ✅ Пагинация на всех list endpoints  
 ✅ Комплексная документация API (см. [API.md](API.md))  
 ✅ Валидация входных параметров  
@@ -328,12 +330,14 @@ npm run build
 ✅ Health check endpoint (`GET /health`)  
 
 ### База данных
+
 ✅ Timestamps (created_at/updated_at) на всех моделях  
 ✅ Индексы на внешних ключах  
 ✅ Cascade deletes для целостности данных  
 ✅ Поддержка Alembic для миграций  
 
 ### Frontend
+
 ✅ ErrorBoundary для обработки ошибок  
 ✅ Loading состояния на всех страницах  
 ✅ Валидация форм перед отправкой  
@@ -342,6 +346,7 @@ npm run build
 ✅ Модальное окно "Данные нового вывода" с полями ввода и календарём  
 
 ### Docker
+
 ✅ Multi-stage builds для меньшего размера образов  
 ✅ Health checks для контейнеров  
 ✅ Restart policies  

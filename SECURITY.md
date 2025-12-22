@@ -43,10 +43,12 @@
 ### 1. Управление секретным ключом
 
 **Текущее состояние:**
+
 - SECRET_KEY по умолчанию жёстко закодирован в config.py
 - Должен быть изменён через переменную окружения в продакшене
 
 **Рекомендация для продакшена:**
+
 ```bash
 # Generate a secure key
 openssl rand -hex 32
@@ -56,6 +58,7 @@ export SECRET_KEY="your-generated-key-here"
 ```
 
 **Почему это важно:**
+
 - SECRET_KEY должен оставаться неизменным между перезагрузками
 - Изменение ключа аннулирует все JWT токены
 - Жёстко закодированные ключи - уязвимость безопасности
@@ -65,6 +68,7 @@ export SECRET_KEY="your-generated-key-here"
 ### 2. Ограничение частоты запросов
 
 **Текущее состояние:**
+
 - In-memory ограничение частоты с использованием словаря Python
 - Работает только для однопроцессных deployments
 - Состояние теряется при перезагрузке
@@ -73,6 +77,7 @@ export SECRET_KEY="your-generated-key-here"
 **Рекомендации для продакшена:**
 
 #### Вариант 1: Ограничение на основе Redis
+
 ```bash
 pip install slowapi redis
 ```
@@ -87,6 +92,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 ```
 
 #### Вариант 2: API Gateway
+
 Используйте nginx, AWS API Gateway или подобное для ограничения частоты на уровне инфраструктуры.
 
 ---
@@ -94,11 +100,13 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 ### 3. Управление токенами
 
 **Текущее состояние:**
+
 - Нет механизма обновления токенов
 - Нет отзыва токенов/чёрного списка
 - Выход не аннулирует токены на стороне сервера
 
 **Рекомендации для продакшена:**
+
 - Реализовать паттерн обновления токенов
 - Использовать Redis для чёрного списка токенов
 - Добавить endpoint отзыва токенов
@@ -109,11 +117,13 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 ### 4. Конфигурация CORS
 
 **Текущее состояние:**
+
 - Допускает только настроенные источники
 - Учётные данные включены
 - Все HTTP методы разрешены
 
 **Контрольный список для продакшена:**
+
 - [ ] Обновить ALLOWED_ORIGINS для production домена
 - [ ] Рассмотреть ограничение HTTP методов если необходимо
 - [ ] Проверить CORS параметры с production URL фронтенда
@@ -123,11 +133,13 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 ### 5. Безопасность базы данных
 
 **Текущее состояние:**
+
 - SQLite по умолчанию (разработка)
 - Нет шифрования в покое
 - Строки подключения в переменных окружения
 
 **Рекомендации для продакшена:**
+
 - Использовать PostgreSQL с SSL
 - Включить шифрование в покое
 - Использовать connection pooling
@@ -139,10 +151,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 ### 6. HTTPS / TLS
 
 **Current State:**
+
 - HTTP only in development
 - Secure cookie flag enabled in production
 
 **Production Requirements:**
+
 - [ ] Enable HTTPS/TLS
 - [ ] Use valid SSL certificate (Let's Encrypt recommended)
 - [ ] Enable HSTS header
@@ -153,10 +167,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 ### 6. HTTPS / TLS
 
 **Текущее состояние:**
+
 - Только HTTP в разработке
 - Флаг Secure для cookies включен в продакшене
 
 **Требования для продакшена:**
+
 - [ ] Включить HTTPS/TLS
 - [ ] Использовать валидный SSL сертификат (рекомендуется Let's Encrypt)
 - [ ] Включить HSTS заголовок
@@ -220,12 +236,14 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 ## 📚 Ресурсы по безопасности
 
 ### Используемые инструменты
+
 - **CodeQL**: Статический анализ для поиска уязвимостей безопасности
 - **Pydantic**: Валидация входных данных
 - **SQLAlchemy**: ORM для предотвращения SQL injection
 - **Passlib/Bcrypt**: Хеширование паролей
 
 ### Рекомендуемое чтение
+
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [FastAPI Security](https://fastapi.tiangolo.com/tutorial/security/)
 - [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
@@ -245,6 +263,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 5. Конфигурация production базы данных
 
 **Рейтинг безопасности: ⭐⭐⭐☆☆**
+
 - ✅ Хорошая основа
 - ✅ Аутентификация работает
 - ✅ Валидация входных данных

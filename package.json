@@ -12,26 +12,35 @@
     "backend:dev": "cd backend && uvicorn app.main:app --reload",
     "backend:lint": "cd backend && black --check . && isort --check-only . && flake8 .",
     "backend:format": "cd backend && black . && isort .",
-    "lint": "npm run frontend:lint && npm run backend:lint",
-    "format": "npm run frontend:format && npm run backend:format",
+    "lint:md": "markdownlint \"**/*.md\" --ignore node_modules --ignore frontend/node_modules",
+    "lint:md:fix": "markdownlint \"**/*.md\" --ignore node_modules --ignore frontend/node_modules --fix",
+    "lint": "npm run frontend:lint && npm run backend:lint && npm run lint:md",
+    "format": "npm run frontend:format && npm run backend:format && npm run lint:md:fix",
     "prepare": "husky install"
   },
   "devDependencies": {
     "husky": "^8.0.3",
-    "lint-staged": "^15.2.0"
+    "lint-staged": "^15.2.0",
+    "markdownlint-cli": "^0.38.0"
   },
   "lint-staged": {
     "frontend/**/*.{js,jsx}": [
       "cd frontend && eslint --fix",
       "cd frontend && prettier --write"
     ],
-    "frontend/**/*.{json,css,md}": [
+    "frontend/**/*.{json,css}": [
       "cd frontend && prettier --write"
     ],
     "backend/**/*.py": [
       "cd backend && black",
       "cd backend && isort",
       "cd backend && flake8"
+    ],
+    "**/*.md": [
+      "markdownlint --fix"
+    ],
+    "**/*.{yml,yaml}": [
+      "prettier --write"
     ]
   }
 }

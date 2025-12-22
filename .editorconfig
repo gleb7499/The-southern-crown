@@ -1,0 +1,61 @@
+# EditorConfig - единые правила форматирования для всех редакторов
+# https://editorconfig.org
+
+root = true
+
+# Для всех файлов
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# JavaScript, JSX, TypeScript, JSON
+[*.{js,jsx,ts,tsx,json}]
+indent_style = space
+indent_size = 2
+
+# Python
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 100
+
+# YAML
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# Shell scripts
+[*.sh]
+indent_style = space
+indent_size = 2
+
+# CSS, SCSS
+[*.{css,scss}]
+indent_style = space
+indent_size = 2
+
+# HTML
+[*.html]
+indent_style = space
+indent_size = 2
+
+# SQL
+[*.sql]
+indent_style = space
+indent_size = 2
+
+# Docker
+[Dockerfile*]
+indent_style = space
+indent_size = 2
+
+# Makefile (требует табы!)
+[Makefile]
+indent_style = tab
