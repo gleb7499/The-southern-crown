@@ -1,24 +1,57 @@
-import React from 'react';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
-import Login from './pages/Login';
-import General from './pages/General';
-import Reports from './pages/Reports';
-import Settings from './pages/Settings';
+import ProtectedRoute from './components/ProtectedRoute';
+import Loading from './components/Loading';
 import './styles/App.css';
+
+// Ленивая загрузка страниц - каждая страница в отдельном чанке
+const Login = lazy(() => import('./pages/Login'));
+const General = lazy(() => import('./pages/General'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard/general" element={<General />} />
-          <Route path="/dashboard/reports" element={<Reports />} />
-          <Route path="/dashboard/settings" element={<Settings />} />
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            {/* Публичный маршрут */}
+            <Route path="/login" element={<Login />} />
+
+            {/* Защищенные маршруты - требуют аутентификации */}
+            <Route
+              path="/dashboard/general"
+              element={
+                <ProtectedRoute>
+                  <General />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/reports"
+              element={
+                <ProtectedRoute>
+                  <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Редиректы по умолчанию */}
+            <Route path="/dashboard" element={<Navigate to="/dashboard/general" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard/general" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard/general" replace />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </ErrorBoundary>
   );

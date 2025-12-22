@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Modal from './Modal';
 
 export default function CalendarModal({ isOpen, onClose, onSelect }) {
@@ -17,8 +17,18 @@ export default function CalendarModal({ isOpen, onClose, onSelect }) {
   };
 
   const monthNames = [
-    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+    'Январь',
+    'Февраль',
+    'Март',
+    'Апрель',
+    'Май',
+    'Июнь',
+    'Июль',
+    'Август',
+    'Сентябрь',
+    'Октябрь',
+    'Ноябрь',
+    'Декабрь',
   ];
 
   return (
@@ -26,8 +36,8 @@ export default function CalendarModal({ isOpen, onClose, onSelect }) {
       <h2>Выбор даты</h2>
       <div className="calendar">
         <div className="calendar-header">
-          <button 
-            className="btn" 
+          <button
+            className="btn"
             onClick={() => {
               if (currentMonth === 0) {
                 setCurrentMonth(11);
@@ -39,9 +49,11 @@ export default function CalendarModal({ isOpen, onClose, onSelect }) {
           >
             &lt;
           </button>
-          <span>{monthNames[currentMonth]} {currentYear}</span>
-          <button 
-            className="btn" 
+          <span>
+            {monthNames[currentMonth]} {currentYear}
+          </span>
+          <button
+            className="btn"
             onClick={() => {
               if (currentMonth === 11) {
                 setCurrentMonth(0);
@@ -55,7 +67,7 @@ export default function CalendarModal({ isOpen, onClose, onSelect }) {
           </button>
         </div>
         <div className="calendar-grid">
-          {days.map(day => (
+          {days.map((day) => (
             <div
               key={day}
               className={`calendar-day ${selectedDate === day ? 'selected' : ''}`}
@@ -67,8 +79,12 @@ export default function CalendarModal({ isOpen, onClose, onSelect }) {
         </div>
       </div>
       <div className="modal-actions">
-        <button className="btn" onClick={onClose}>Отмена</button>
-        <button className="btn btn-primary" onClick={handleSelect}>OK</button>
+        <button className="btn" onClick={onClose}>
+          Отмена
+        </button>
+        <button className="btn btn-primary" onClick={handleSelect}>
+          OK
+        </button>
       </div>
     </Modal>
   );

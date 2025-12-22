@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import CameraPreviewModal from '../components/CameraPreviewModal';
 import DataOutputModal from '../components/DataOutputModal';
@@ -11,19 +11,19 @@ export default function Settings() {
   const [cameras, setCameras] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [newPointData, setNewPointData] = useState({
     farmName: '',
     buildingName: '',
-    pointName: ''
+    pointName: '',
   });
-  
+
   const [newCameraData, setNewCameraData] = useState({
     name: '',
     url: '',
-    control_point_id: ''
+    control_point_id: '',
   });
-  
+
   const [showCameraPreview, setShowCameraPreview] = useState(false);
   const [selectedCamera, setSelectedCamera] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -38,7 +38,7 @@ export default function Settings() {
       setLoading(true);
       const [farmsRes, camerasRes] = await Promise.all([
         farmsAPI.getFarms(),
-        camerasAPI.getCameras()
+        camerasAPI.getCameras(),
       ]);
       setFarms(farmsRes.data);
       setCameras(camerasRes.data);
@@ -52,16 +52,18 @@ export default function Settings() {
 
   const handleCreatePoint = async (e) => {
     e.preventDefault();
-    
+
     try {
       setSubmitting(true);
       await controlPointsAPI.createControlPointFull({
         farm_name: newPointData.farmName,
         building_name: newPointData.buildingName,
-        control_point_name: newPointData.pointName
+        control_point_name: newPointData.pointName,
       });
-      
-      alert(`Точка контроля успешно создана: ${newPointData.farmName} / ${newPointData.buildingName} / ${newPointData.pointName}`);
+
+      alert(
+        `Точка контроля успешно создана: ${newPointData.farmName} / ${newPointData.buildingName} / ${newPointData.pointName}`
+      );
       setNewPointData({ farmName: '', buildingName: '', pointName: '' });
       loadData(); // Reload data to show updated lists
     } catch (error) {
@@ -74,16 +76,16 @@ export default function Settings() {
 
   const handleCreateCamera = async (e) => {
     e.preventDefault();
-    
+
     try {
       // For stub, use first control point if available
       const controlPointId = 1;
       await camerasAPI.createCamera({
         name: newCameraData.name,
         url: newCameraData.url,
-        control_point_id: controlPointId
+        control_point_id: controlPointId,
       });
-      
+
       setNewCameraData({ name: '', url: '', control_point_id: '' });
       loadData();
     } catch (error) {
@@ -117,7 +119,7 @@ export default function Settings() {
   return (
     <Layout>
       <h1>Настройка</h1>
-      
+
       <div className="settings-section">
         <h2>Создание точки контроля</h2>
         <form onSubmit={handleCreatePoint}>
@@ -127,7 +129,7 @@ export default function Settings() {
               <input
                 type="text"
                 value={newPointData.farmName}
-                onChange={(e) => setNewPointData({...newPointData, farmName: e.target.value})}
+                onChange={(e) => setNewPointData({ ...newPointData, farmName: e.target.value })}
                 required
               />
             </div>
@@ -136,7 +138,7 @@ export default function Settings() {
               <input
                 type="text"
                 value={newPointData.buildingName}
-                onChange={(e) => setNewPointData({...newPointData, buildingName: e.target.value})}
+                onChange={(e) => setNewPointData({ ...newPointData, buildingName: e.target.value })}
                 required
               />
             </div>
@@ -145,16 +147,12 @@ export default function Settings() {
               <input
                 type="text"
                 value={newPointData.pointName}
-                onChange={(e) => setNewPointData({...newPointData, pointName: e.target.value})}
+                onChange={(e) => setNewPointData({ ...newPointData, pointName: e.target.value })}
                 required
               />
             </div>
           </div>
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={submitting}
-          >
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
             {submitting ? 'Создание...' : 'Создать точку контроля'}
           </button>
         </form>
@@ -169,7 +167,7 @@ export default function Settings() {
               <input
                 type="text"
                 value={newCameraData.url}
-                onChange={(e) => setNewCameraData({...newCameraData, url: e.target.value})}
+                onChange={(e) => setNewCameraData({ ...newCameraData, url: e.target.value })}
                 placeholder="rtsp://example.com/stream"
                 required
               />
@@ -179,12 +177,14 @@ export default function Settings() {
               <input
                 type="text"
                 value={newCameraData.name}
-                onChange={(e) => setNewCameraData({...newCameraData, name: e.target.value})}
+                onChange={(e) => setNewCameraData({ ...newCameraData, name: e.target.value })}
                 required
               />
             </div>
           </div>
-          <button type="submit" className="btn btn-primary">Добавить камеру</button>
+          <button type="submit" className="btn btn-primary">
+            Добавить камеру
+          </button>
         </form>
       </div>
 
@@ -192,7 +192,7 @@ export default function Settings() {
         <h2>Список камер</h2>
         <div className="camera-list">
           {cameras.length > 0 ? (
-            cameras.map(camera => (
+            cameras.map((camera) => (
               <div key={camera.id} className="camera-item">
                 <div>
                   <strong>{camera.name}</strong>
@@ -200,16 +200,10 @@ export default function Settings() {
                   <small>{camera.url}</small>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button 
-                    className="btn" 
-                    onClick={() => handlePreviewCamera(camera)}
-                  >
+                  <button className="btn" onClick={() => handlePreviewCamera(camera)}>
                     Просмотр
                   </button>
-                  <button 
-                    className="btn" 
-                    onClick={() => handleDeleteCamera(camera.id)}
-                  >
+                  <button className="btn" onClick={() => handleDeleteCamera(camera.id)}>
                     Удалить
                   </button>
                 </div>
@@ -224,9 +218,15 @@ export default function Settings() {
                   <small>rtsp://example.com/camera1</small>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button 
-                    className="btn" 
-                    onClick={() => handlePreviewCamera({ id: 1, name: 'Камера 1', url: 'rtsp://example.com/camera1' })}
+                  <button
+                    className="btn"
+                    onClick={() =>
+                      handlePreviewCamera({
+                        id: 1,
+                        name: 'Камера 1',
+                        url: 'rtsp://example.com/camera1',
+                      })
+                    }
                   >
                     Просмотр
                   </button>
@@ -240,9 +240,15 @@ export default function Settings() {
                   <small>rtsp://example.com/camera2</small>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button 
-                    className="btn" 
-                    onClick={() => handlePreviewCamera({ id: 2, name: 'Камера 2', url: 'rtsp://example.com/camera2' })}
+                  <button
+                    className="btn"
+                    onClick={() =>
+                      handlePreviewCamera({
+                        id: 2,
+                        name: 'Камера 2',
+                        url: 'rtsp://example.com/camera2',
+                      })
+                    }
                   >
                     Просмотр
                   </button>
@@ -258,8 +264,8 @@ export default function Settings() {
         <button className="btn btn-primary" onClick={() => setShowImageModal(true)}>
           Вывести изображение
         </button>
-        <button 
-          className="btn" 
+        <button
+          className="btn"
           onClick={() => setShowDataOutputModal(true)}
           style={{ marginLeft: '10px' }}
         >
@@ -277,16 +283,18 @@ export default function Settings() {
         <div className="modal-overlay" onClick={() => setShowImageModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Вывести изображение</h2>
-            <div style={{ 
-              width: '100%', 
-              height: '300px', 
-              backgroundColor: '#ccc', 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              border: '1px solid #999',
-              marginTop: '20px'
-            }}>
+            <div
+              style={{
+                width: '100%',
+                height: '300px',
+                backgroundColor: '#ccc',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                border: '1px solid #999',
+                marginTop: '20px',
+              }}
+            >
               <p>Заглушка вывода изображения</p>
             </div>
             <div className="modal-actions">
@@ -298,10 +306,7 @@ export default function Settings() {
         </div>
       )}
 
-      <DataOutputModal
-        isOpen={showDataOutputModal}
-        onClose={() => setShowDataOutputModal(false)}
-      />
+      <DataOutputModal isOpen={showDataOutputModal} onClose={() => setShowDataOutputModal(false)} />
     </Layout>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import Modal from '../components/Modal';
@@ -11,13 +11,13 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!email || !password) {
       setShowErrorModal(true);
       return;
     }
-    
+
     try {
       await authAPI.login(email, password);
       navigate('/dashboard/general');
@@ -56,11 +56,7 @@ export default function Login() {
               required
             />
           </div>
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            aria-label="Войти в систему"
-          >
+          <button type="submit" className="btn btn-primary" aria-label="Войти в систему">
             Войти
           </button>
         </form>

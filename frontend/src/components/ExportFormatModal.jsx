@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Modal from './Modal';
 
 export default function ExportFormatModal({ isOpen, onClose, reportData }) {
@@ -12,8 +12,8 @@ export default function ExportFormatModal({ isOpen, onClose, reportData }) {
 
     // Create CSV content
     let csvContent = 'Точка контроля,День,Значение\n';
-    
-    data.charts.forEach(chart => {
+
+    data.charts.forEach((chart) => {
       chart.days.forEach((day, index) => {
         csvContent += `${chart.control_point_name},${day},${chart.values[index]}\n`;
       });
@@ -48,9 +48,9 @@ export default function ExportFormatModal({ isOpen, onClose, reportData }) {
 
     // For XLSX, we'll create a simple HTML table and download as Excel-compatible format
     let htmlContent = '<html><head><meta charset="utf-8"></head><body><table border="1">';
-    
+
     // Add data
-    data.charts.forEach(chart => {
+    data.charts.forEach((chart) => {
       htmlContent += `<tr><th colspan="3">${chart.control_point_name}</th></tr>`;
       htmlContent += '<tr><th>День</th><th>Значение</th></tr>';
       chart.days.forEach((day, index) => {
@@ -116,8 +116,12 @@ export default function ExportFormatModal({ isOpen, onClose, reportData }) {
         </div>
       </div>
       <div className="modal-actions">
-        <button className="btn" onClick={onClose}>Отмена</button>
-        <button className="btn btn-primary" onClick={handleExport}>OK</button>
+        <button className="btn" onClick={onClose}>
+          Отмена
+        </button>
+        <button className="btn btn-primary" onClick={handleExport}>
+          OK
+        </button>
       </div>
     </Modal>
   );

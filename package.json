@@ -1,0 +1,37 @@
+{
+  "name": "southern-crown-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Административная панель управления фермой - монорепозиторий",
+  "scripts": {
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:lint": "cd frontend && npm run lint",
+    "frontend:lint:fix": "cd frontend && npm run lint:fix",
+    "frontend:format": "cd frontend && npm run format",
+    "backend:dev": "cd backend && uvicorn app.main:app --reload",
+    "backend:lint": "cd backend && black --check . && isort --check-only . && flake8 .",
+    "backend:format": "cd backend && black . && isort .",
+    "lint": "npm run frontend:lint && npm run backend:lint",
+    "format": "npm run frontend:format && npm run backend:format",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "frontend/**/*.{js,jsx}": [
+      "cd frontend && eslint --fix",
+      "cd frontend && prettier --write"
+    ],
+    "frontend/**/*.{json,css,md}": [
+      "cd frontend && prettier --write"
+    ],
+    "backend/**/*.py": [
+      "cd backend && black",
+      "cd backend && isort",
+      "cd backend && flake8"
+    ]
+  }
+}

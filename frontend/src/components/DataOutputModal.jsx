@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Modal from './Modal';
 import CalendarModal from './CalendarModal';
 
@@ -12,13 +12,13 @@ export default function DataOutputModal({ isOpen, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Validate numeric fields
     if (!weight || !uniformity || !deviation || !percentage) {
       alert('Пожалуйста, заполните все поля');
       return;
     }
-    
+
     if (!selectedDate) {
       alert('Пожалуйста, выберите дату');
       return;
@@ -29,12 +29,14 @@ export default function DataOutputModal({ isOpen, onClose }) {
       uniformity: parseFloat(uniformity),
       deviation: parseFloat(deviation),
       percentage: parseFloat(percentage),
-      date: selectedDate.toISOString().split('T')[0]
+      date: selectedDate.toISOString().split('T')[0],
     };
 
-    console.log('Data output:', data);
-    alert(`Данные сохранены:\nВес: ${weight}\nЕдинобразие: ${uniformity}\nОтклонение: ${deviation}\n%: ${percentage}\nДата: ${selectedDate.toLocaleDateString('ru-RU')}`);
-    
+    console.error('Data output:', data);
+    alert(
+      `Данные сохранены:\nВес: ${weight}\nЕдинобразие: ${uniformity}\nОтклонение: ${deviation}\n%: ${percentage}\nДата: ${selectedDate.toLocaleDateString('ru-RU')}`
+    );
+
     // Reset form
     setWeight('');
     setUniformity('');
@@ -104,11 +106,7 @@ export default function DataOutputModal({ isOpen, onClose }) {
 
           <div className="form-group">
             <label>Дата измерения</label>
-            <button 
-              type="button"
-              className="btn"
-              onClick={() => setShowCalendar(true)}
-            >
+            <button type="button" className="btn" onClick={() => setShowCalendar(true)}>
               {selectedDate ? selectedDate.toLocaleDateString('ru-RU') : 'Выбрать дату'}
             </button>
           </div>

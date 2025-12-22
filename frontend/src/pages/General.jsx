@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import AlertModal from '../components/AlertModal';
 import Loading from '../components/Loading';
@@ -50,11 +50,11 @@ export default function General() {
 
   const handleFarmChange = async (farmId) => {
     const newSelected = selectedFarms.includes(farmId)
-      ? selectedFarms.filter(id => id !== farmId)
+      ? selectedFarms.filter((id) => id !== farmId)
       : [...selectedFarms, farmId];
-    
+
     setSelectedFarms(newSelected);
-    
+
     if (newSelected.length > 0) {
       try {
         const buildingsRes = await farmsAPI.getBuildings(newSelected[0]);
@@ -69,9 +69,9 @@ export default function General() {
 
   const handleBuildingChange = (buildingId) => {
     const newSelected = selectedBuildings.includes(buildingId)
-      ? selectedBuildings.filter(id => id !== buildingId)
+      ? selectedBuildings.filter((id) => id !== buildingId)
       : [...selectedBuildings, buildingId];
-    
+
     setSelectedBuildings(newSelected);
   };
 
@@ -99,47 +99,51 @@ export default function General() {
   return (
     <Layout>
       <h1>Общее</h1>
-      
+
       <div className="filters">
         <div className="filter-group">
           <label>Ферма</label>
-          <select 
-            multiple 
+          <select
+            multiple
             value={selectedFarms}
             onChange={(e) => {
               const options = Array.from(e.target.selectedOptions);
-              const values = options.map(opt => parseInt(opt.value));
+              const values = options.map((opt) => parseInt(opt.value));
               setSelectedFarms(values);
               if (values.length > 0) {
-                farmsAPI.getBuildings(values[0]).then(res => setBuildings(res.data));
+                farmsAPI.getBuildings(values[0]).then((res) => setBuildings(res.data));
               }
             }}
             size="5"
           >
-            {farms.map(farm => (
-              <option key={farm.id} value={farm.id}>{farm.name}</option>
+            {farms.map((farm) => (
+              <option key={farm.id} value={farm.id}>
+                {farm.name}
+              </option>
             ))}
           </select>
         </div>
-        
+
         <div className="filter-group">
           <label>Корпус</label>
-          <select 
-            multiple 
+          <select
+            multiple
             value={selectedBuildings}
             onChange={(e) => {
               const options = Array.from(e.target.selectedOptions);
-              const values = options.map(opt => parseInt(opt.value));
+              const values = options.map((opt) => parseInt(opt.value));
               setSelectedBuildings(values);
             }}
             size="5"
           >
-            {buildings.map(building => (
-              <option key={building.id} value={building.id}>{building.name}</option>
+            {buildings.map((building) => (
+              <option key={building.id} value={building.id}>
+                {building.name}
+              </option>
             ))}
           </select>
         </div>
-        
+
         <div className="filter-group">
           <label>Точка контроля</label>
           <select multiple size="5">
@@ -148,12 +152,8 @@ export default function General() {
             <option>Точка 3</option>
           </select>
         </div>
-        
-        <button 
-          className="btn btn-primary" 
-          onClick={handleFilter}
-          disabled={filtering}
-        >
+
+        <button className="btn btn-primary" onClick={handleFilter} disabled={filtering}>
           {filtering ? 'Загрузка...' : 'OK'}
         </button>
       </div>
@@ -174,7 +174,7 @@ export default function General() {
       </div>
 
       <div className="cards-container">
-        {filteredPoints.map(point => (
+        {filteredPoints.map((point) => (
           <div key={point.id} className="card">
             <h3>{point.name}</h3>
             <p>Ферма: {point.farm_name}</p>
@@ -183,7 +183,7 @@ export default function General() {
             <p>Отклонение: {point.average_deviation}</p>
           </div>
         ))}
-        
+
         {filteredPoints.length === 0 && (
           <>
             <div className="card">
@@ -205,11 +205,7 @@ export default function General() {
         )}
       </div>
 
-      <AlertModal
-        isOpen={showAlert}
-        onClose={() => setShowAlert(false)}
-        message={alertMessage}
-      />
+      <AlertModal isOpen={showAlert} onClose={() => setShowAlert(false)} message={alertMessage} />
     </Layout>
   );
 }

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import CalendarModal from '../components/CalendarModal';
 import ExportFormatModal from '../components/ExportFormatModal';
 import Loading from '../components/Loading';
-import { farmsAPI, controlPointsAPI, reportsAPI } from '../services/api';
+import { farmsAPI, reportsAPI } from '../services/api';
 
 export default function Reports() {
   const [farms, setFarms] = useState([]);
@@ -40,11 +40,11 @@ export default function Reports() {
 
   const handleFarmChange = async (farmId) => {
     const newSelected = selectedFarms.includes(farmId)
-      ? selectedFarms.filter(id => id !== farmId)
+      ? selectedFarms.filter((id) => id !== farmId)
       : [...selectedFarms, farmId];
-    
+
     setSelectedFarms(newSelected);
-    
+
     if (newSelected.length > 0) {
       try {
         const buildingsRes = await farmsAPI.getBuildings(newSelected[0]);
@@ -88,12 +88,7 @@ export default function Reports() {
     }
   };
 
-  const indicators = [
-    'средний вес',
-    '%',
-    'единобразие',
-    'стандартное отклонение'
-  ];
+  const indicators = ['средний вес', '%', 'единобразие', 'стандартное отклонение'];
 
   if (loading) {
     return (
@@ -106,47 +101,51 @@ export default function Reports() {
   return (
     <Layout>
       <h1>Отчёты</h1>
-      
+
       <div className="filters">
         <div className="filter-group">
           <label>Ферма</label>
-          <select 
-            multiple 
+          <select
+            multiple
             value={selectedFarms}
             onChange={(e) => {
               const options = Array.from(e.target.selectedOptions);
-              const values = options.map(opt => parseInt(opt.value));
+              const values = options.map((opt) => parseInt(opt.value));
               setSelectedFarms(values);
               if (values.length > 0) {
-                farmsAPI.getBuildings(values[0]).then(res => setBuildings(res.data));
+                farmsAPI.getBuildings(values[0]).then((res) => setBuildings(res.data));
               }
             }}
             size="3"
           >
-            {farms.map(farm => (
-              <option key={farm.id} value={farm.id}>{farm.name}</option>
+            {farms.map((farm) => (
+              <option key={farm.id} value={farm.id}>
+                {farm.name}
+              </option>
             ))}
           </select>
         </div>
-        
+
         <div className="filter-group">
           <label>Корпус</label>
-          <select 
-            multiple 
+          <select
+            multiple
             value={selectedBuildings}
             onChange={(e) => {
               const options = Array.from(e.target.selectedOptions);
-              const values = options.map(opt => parseInt(opt.value));
+              const values = options.map((opt) => parseInt(opt.value));
               setSelectedBuildings(values);
             }}
             size="3"
           >
-            {buildings.map(building => (
-              <option key={building.id} value={building.id}>{building.name}</option>
+            {buildings.map((building) => (
+              <option key={building.id} value={building.id}>
+                {building.name}
+              </option>
             ))}
           </select>
         </div>
-        
+
         <div className="filter-group">
           <label>Точка контроля</label>
           <select multiple size="3">
@@ -155,24 +154,25 @@ export default function Reports() {
             <option>Точка 3</option>
           </select>
         </div>
-        
-        <button className="btn btn-primary" onClick={handleGenerate}>OK</button>
+
+        <button className="btn btn-primary" onClick={handleGenerate}>
+          OK
+        </button>
       </div>
 
       <div className="report-controls">
         <div className="form-group">
           <label>Выбор показателя</label>
-          <select 
-            value={selectedIndicator}
-            onChange={(e) => setSelectedIndicator(e.target.value)}
-          >
+          <select value={selectedIndicator} onChange={(e) => setSelectedIndicator(e.target.value)}>
             <option value="">Выберите показатель</option>
-            {indicators.map(indicator => (
-              <option key={indicator} value={indicator}>{indicator}</option>
+            {indicators.map((indicator) => (
+              <option key={indicator} value={indicator}>
+                {indicator}
+              </option>
             ))}
           </select>
         </div>
-        
+
         <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
           <button className="btn" onClick={() => handleDateSelect('start')}>
             Начальная дата {startDate ? `: ${startDate.toLocaleDateString('ru-RU')}` : ''}
@@ -181,13 +181,9 @@ export default function Reports() {
             Конечная дата {endDate ? `: ${endDate.toLocaleDateString('ru-RU')}` : ''}
           </button>
         </div>
-        
+
         <div style={{ marginTop: '15px' }}>
-          <button 
-            className="btn btn-primary" 
-            onClick={handleGenerate}
-            disabled={generating}
-          >
+          <button className="btn btn-primary" onClick={handleGenerate} disabled={generating}>
             {generating ? 'Генерация...' : 'Сформировать'}
           </button>
         </div>
@@ -201,16 +197,14 @@ export default function Reports() {
             {reportData.charts.map((chart, index) => (
               <div key={index} className="chart">
                 <h3>{chart.control_point_name}</h3>
-                <div className="chart-placeholder">
-                  График: {chart.control_point_name}
-                </div>
+                <div className="chart-placeholder">График: {chart.control_point_name}</div>
                 <div className="chart-labels">
                   <span>Отклонение в граммах (Y)</span>
                   <span>День развития (X)</span>
                 </div>
               </div>
             ))}
-            
+
             <div className="chart">
               <h3>Отклонение общее</h3>
               <div className="chart-placeholder">
@@ -232,7 +226,7 @@ export default function Reports() {
                 <span>День развития (X)</span>
               </div>
             </div>
-            
+
             <div className="chart">
               <h3>График 2</h3>
               <div className="chart-placeholder">Заглушка графика</div>
@@ -241,7 +235,7 @@ export default function Reports() {
                 <span>День развития (X)</span>
               </div>
             </div>
-            
+
             <div className="chart">
               <h3>Отклонение общее</h3>
               <div className="chart-placeholder">Заглушка графика</div>

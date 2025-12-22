@@ -43,7 +43,7 @@ export const controlPointsAPI = {
 };
 
 export const camerasAPI = {
-  getCameras: (controlPointId) => 
+  getCameras: (controlPointId) =>
     api.get('/api/cameras/', { params: { control_point_id: controlPointId } }),
   createCamera: (data) => api.post('/api/cameras/', data),
   deleteCamera: (id) => api.delete(`/api/cameras/${id}`),
