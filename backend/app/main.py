@@ -1,15 +1,17 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.database import Base, engine
+
+from app.api import auth, cameras, control_points, farms, reports
 from app.core.config import settings
-from app.api import auth, control_points, cameras, farms, reports
-from app.middleware.security import SecurityHeadersMiddleware, RateLimitMiddleware
-import logging
+from app.core.database import Base, engine
+from app.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO if settings.DEBUG else logging.WARNING,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ app = FastAPI(
     title="Southern Crown Admin API",
     description="Farm management admin panel API",
     version="1.0.0",
-    debug=settings.DEBUG
+    debug=settings.DEBUG,
 )
 
 # Security middleware

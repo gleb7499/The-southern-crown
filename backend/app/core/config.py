@@ -1,5 +1,6 @@
-from pydantic_settings import BaseSettings
 from typing import List
+
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -9,20 +10,20 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "CHANGE_THIS_TO_A_SECURE_SECRET_KEY_IN_PRODUCTION_AND_KEEP_IT_CONSISTENT"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
-    
+
     # Database
     DATABASE_URL: str = "sqlite:///./southern_crown.db"
-    
+
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
-    
+
     # Environment
     ENV: str = "development"
     DEBUG: bool = True
-    
+
     class Config:
         env_file = ".env"
-        
+
     @property
     def allowed_origins_list(self) -> List[str]:
         """Parse ALLOWED_ORIGINS string into list"""

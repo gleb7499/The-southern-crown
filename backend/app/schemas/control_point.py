@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class ControlPointBase(BaseModel):
@@ -14,6 +15,7 @@ class ControlPointCreate(ControlPointBase):
 
 class ControlPointCreateFull(BaseModel):
     """Schema for creating control point with farm and frame names"""
+
     farm_name: str
     frame_name: str
     control_point_name: str
