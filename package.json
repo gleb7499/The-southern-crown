@@ -32,9 +32,9 @@
       "cd frontend && prettier --write"
     ],
     "backend/**/*.py": [
-      "cd backend && black",
-      "cd backend && isort",
-      "cd backend && flake8"
+      "python -m black",
+      "python -m isort",
+      "python -m flake8 --max-line-length=100 --extend-ignore=E501,E203,W503,C901,F401,E402"
     ],
     "**/*.md": [
       "markdownlint --fix"

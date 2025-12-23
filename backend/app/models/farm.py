@@ -13,5 +13,6 @@ class Farm(Base):
     control_points = relationship(
         "ControlPoint", back_populates="farm", cascade="all, delete-orphan"
     )
+    cameras = relationship("Camera", back_populates="farm", cascade="all, delete-orphan")
     growth_rates = relationship("GrowthRate", back_populates="farm", cascade="all, delete-orphan")
     reports = relationship("Report", back_populates="farm", cascade="all, delete-orphan")

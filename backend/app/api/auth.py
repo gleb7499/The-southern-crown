@@ -17,12 +17,12 @@ logger = logging.getLogger(__name__)
 @router.post("/login")
 def login(credentials: LoginRequest, response: Response, db: Session = Depends(get_db)):
     """
-    Authenticate user and return JWT token in httponly cookie.
+    Аутентификация пользователя и возврат JWT токена в httponly cookie.
 
-    - **email**: User email address
-    - **password**: User password
+    - **email**: Email адрес пользователя
+    - **password**: Пароль пользователя
 
-    Returns success message on successful authentication.
+    Возвращает сообщение об успешной аутентификации.
     """
     logger.info(f"Login attempt for email: {credentials.email}")
 
@@ -61,10 +61,16 @@ def login(credentials: LoginRequest, response: Response, db: Session = Depends(g
 
 @router.post("/logout")
 def logout(response: Response):
+    """
+    Выход из системы. Удаляет cookie с токеном аутентификации.
+    """
     response.delete_cookie(key="access_token")
     return {"message": "Logout successful"}
 
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
+    """
+    Получить информацию о текущем авторизованном пользователе.
+    """
     return current_user

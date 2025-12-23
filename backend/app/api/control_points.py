@@ -29,11 +29,11 @@ def get_control_points(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Get list of control points with optional filtering and pagination.
+    Получить список точек контроля с опциональной фильтрацией и пагинацией.
 
-    - **farm_ids**: Comma-separated list of farm IDs to filter by
-    - **skip**: Number of records to skip (pagination)
-    - **limit**: Maximum number of records to return (pagination)
+    - **farm_ids**: Список ID ферм через запятую для фильтрации
+    - **skip**: Количество записей для пропуска (пагинация)
+    - **limit**: Максимальное количество возвращаемых записей (пагинация)
     """
     query = (
         db.query(ControlPointModel, Farm.name.label("farm_name"))
@@ -46,7 +46,7 @@ def get_control_points(
             farm_id_list = [int(x.strip()) for x in farm_ids.split(",") if x.strip()]
             query = query.filter(Farm.id.in_(farm_id_list))
             logger.info(f"Filtering by farm IDs: {farm_id_list}")
-        except ValueError as e:
+        except ValueError:
             logger.error(f"Invalid farm_ids format: {farm_ids}")
             raise HTTPException(status_code=400, detail="Invalid farm_ids format")
 
@@ -76,9 +76,9 @@ def create_control_point(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Create a new control point.
+    Создать новую точку контроля.
 
-    Requires farm_id to exist in database.
+    Требуется существующий farm_id в базе данных.
     """
     # Verify farm exists
     farm = db.query(Farm).filter(Farm.id == control_point.farm_id).first()
@@ -102,10 +102,10 @@ def create_control_point_full(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Create a new control point along with farm if it doesn't exist.
+    Создать новую точку контроля вместе с фермой, если она не существует.
 
-    This endpoint is designed for the Settings page where users can create
-    a complete structure by providing names only.
+    Этот endpoint предназначен для страницы Настроек, где пользователи могут создать
+    полную структуру, указав только названия.
     """
     # Check if admin
     if not current_user.is_admin:
@@ -137,7 +137,7 @@ def get_control_point(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get a specific control point by ID."""
+    """Получить конкретную точку контроля по ID."""
     control_point = (
         db.query(ControlPointModel).filter(ControlPointModel.id == control_point_id).first()
     )
