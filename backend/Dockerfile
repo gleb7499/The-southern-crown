@@ -23,21 +23,16 @@ COPY --from=builder /opt/venv /opt/venv
 # Use virtual environment
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Create non-root user first (before copying files)
-RUN useradd -m -u 1000 appuser
-
 # Create data directory for SQLite
-RUN mkdir -p /app/data && chown -R appuser:appuser /app/data
+RUN mkdir -p /app/data
 
 # Copy application code
-COPY --chown=appuser:appuser . .
-
-# Switch to non-root user
-USER appuser
+COPY . .
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
 
 # Run migrations and start server
+# Note: Running as root for Windows compatibility with volume mounts
 CMD ["sh", "-c", "python -m app.init_db && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

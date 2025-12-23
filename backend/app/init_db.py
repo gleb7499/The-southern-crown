@@ -2,8 +2,12 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal, engine, Base
 from app.core.security import get_password_hash
 from app.models.user import User
-from app.models.farm import Farm, Building, ControlPoint
+from app.models.farm import Farm
+from app.models.control_point import ControlPoint
+from app.models.growth_rate import GrowthRate
+from app.models.report import Report
 from app.models.camera import Camera
+from datetime import date, timedelta
 
 
 def init_db():
@@ -54,26 +58,49 @@ def init_db():
                 db.add(farm)
                 db.flush()
                 
-                # Add buildings to each farm
+                # Add control points to each farm (3 frames per farm)
                 for i in range(1, 4):
-                    building = Building(
-                        name=f"Корпус {i}",
-                        farm_id=farm.id
-                    )
-                    db.add(building)
-                    db.flush()
-                    
-                    # Add control points to each building
+                    # Add control points to each frame
                     for j in range(1, 3):
                         control_point = ControlPoint(
                             name=f"Точка {j}",
-                            building_id=building.id,
-                            day_of_development=10 + j,
-                            average_deviation=5 * j
+                            frame_name=f"Корпус {i}",
+                            farm_id=farm.id
                         )
                         db.add(control_point)
+                        db.flush()
+                        
+                        # Add sample cameras to control points
+                        for k in range(1, 3):
+                            camera = Camera(
+                                name=f"Камера {k}",
+                                url=f"http://example.com/stream/{farm.id}/{i}/{j}/{k}",
+                                control_point_id=control_point.id
+                            )
+                            db.add(camera)
+                        
+                        # Add sample growth rate data
+                        growth_rate = GrowthRate(
+                            farm_id=farm.id,
+                            control_point_id=control_point.id,
+                            chickens_quantity=5000 + (j * 100),
+                            growth_day=15 + j,
+                            initial_average_weight=45 + (j * 5),
+                            landing_date=date.today() - timedelta(days=15),
+                            closing_date=None
+                        )
+                        db.add(growth_rate)
+                        
+                        # Add sample report data
+                        report = Report(
+                            farm_id=farm.id,
+                            control_point_id=control_point.id,
+                            date=date.today(),
+                            gram=1250 + (j * 50)
+                        )
+                        db.add(report)
             
-            print("Created sample farms, buildings, and control points")
+            print("Created sample farms, control points, cameras, growth rates, and reports")
         
         db.commit()
         print("Database initialized successfully")
