@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, cameras, control_points, farms, reports
+from app.api import auth, cameras, control_points, farms, growth_rates, reports
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
@@ -49,6 +49,7 @@ app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(control_points.router, prefix="/api/control-points", tags=["control-points"])
 app.include_router(cameras.router, prefix="/api/cameras", tags=["cameras"])
 app.include_router(farms.router, prefix="/api", tags=["farms"])
+app.include_router(growth_rates.router, prefix="/api/growth-rates", tags=["growth-rates"])
 app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
 
 

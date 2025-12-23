@@ -1,6 +1,5 @@
 from datetime import date, timedelta
-
-from sqlalchemy.orm import Session
+from pathlib import Path
 
 from app.core.database import Base, SessionLocal, engine
 from app.core.security import get_password_hash
@@ -13,9 +12,6 @@ from app.models.user import User
 
 
 def init_db():
-    import os
-    from pathlib import Path
-
     # Ensure data directory exists and is writable
     data_dir = Path("/app/data")
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -71,6 +67,7 @@ def init_db():
                             camera = Camera(
                                 name=f"Камера {k}",
                                 url=f"http://example.com/stream/{farm.id}/{i}/{j}/{k}",
+                                farm_id=farm.id,
                                 control_point_id=control_point.id,
                             )
                             db.add(camera)

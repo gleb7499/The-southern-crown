@@ -7,13 +7,18 @@ from app.core.database import Base
 class Camera(Base):
     __tablename__ = "camera"
 
-    __table_args__ = (Index("ix_camera_control_point_id", "control_point_id"),)
+    __table_args__ = (
+        Index("ix_camera_control_point_id", "control_point_id"),
+        Index("ix_camera_farm_id", "farm_id"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     url = Column(String, nullable=False)
+    farm_id = Column(Integer, ForeignKey("farm.id", ondelete="CASCADE"), nullable=False)
     control_point_id = Column(
         Integer, ForeignKey("control_point.id", ondelete="CASCADE"), nullable=False
     )
 
+    farm = relationship("Farm", back_populates="cameras")
     control_point = relationship("ControlPoint", back_populates="cameras")

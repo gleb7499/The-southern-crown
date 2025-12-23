@@ -21,7 +21,12 @@ def get_farms(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get list of farms with pagination."""
+    """
+    Получить список ферм с пагинацией.
+
+    - **skip**: Количество записей для пропуска
+    - **limit**: Максимальное количество возвращаемых записей
+    """
     farms = db.query(FarmModel).offset(skip).limit(limit).all()
     logger.info(f"Returning {len(farms)} farms")
     return farms
@@ -31,9 +36,14 @@ def get_farms(
 def create_farm(
     farm: FarmCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    """Create a new farm."""
+    """
+    Создать новую ферму.
+
+    Требуются права администратора.
+    - **name**: Название фермы
+    """
     # Check if admin
-    if not current_user.is_admin:
+    if not current_user.is_admin:  # type: ignore
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
     db_farm = FarmModel(**farm.dict())
