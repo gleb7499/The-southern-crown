@@ -19,7 +19,7 @@ export default function Reports() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const farmsRes = await farmsAPI.getFarms();
+      await farmsAPI.getFarms();
     } catch (error) {
       console.error('Error loading data:', error);
       alert('Ошибка при загрузке данных');
@@ -85,7 +85,6 @@ export default function Reports() {
 
       <FiltersForm
         onFilter={(filters) => {
-          console.log('Filters applied:', filters);
           setSelectedControlPointId(filters.control_point_id);
           setSelectedControlPointName(filters.control_point_name || '');
         }}

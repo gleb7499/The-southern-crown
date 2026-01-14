@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import logo from '../assets/logo.png';

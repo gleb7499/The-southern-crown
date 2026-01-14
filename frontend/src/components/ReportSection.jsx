@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { reportsAPI } from '../services/api';
 
 export default function ReportSection({ controlPointId, controlPointName }) {
   const [reports, setReports] = useState([]);
@@ -16,7 +15,6 @@ export default function ReportSection({ controlPointId, controlPointName }) {
     try {
       setLoading(true);
       setError(null);
-      console.log('Loading reports for control point:', cpId);
 
       // Используем относительный путь чтобы работал прокси Vite
       const response = await fetch(`/api/reports/?control_point_id=${cpId}`, {
@@ -32,12 +30,9 @@ export default function ReportSection({ controlPointId, controlPointName }) {
       }
 
       const data = await response.json();
-      console.log('Reports loaded:', data);
-      console.log('Total reports count:', data?.length || 0);
 
       // Сортируем отчеты по дате (новые в конце)
       const sortedReports = (data || []).sort((a, b) => new Date(a.date) - new Date(b.date));
-      console.log('Sorted reports:', sortedReports);
       setReports(sortedReports);
     } catch (err) {
       console.error('Error loading reports:', err);
@@ -47,46 +42,10 @@ export default function ReportSection({ controlPointId, controlPointName }) {
     }
   };
 
-  // Рассчитываем среднее значение в граммах за последние 5 дней
-  const calculateAverageGram = () => {
-    if (reports.length === 0) return 0;
-
-    // Берём данные за последние 5 дней
-    const recentReports = reports.slice(-5);
-    const avgGram = recentReports.reduce((sum, r) => sum + (r.gram || 0), 0) / recentReports.length;
-
-    return Math.round(avgGram);
-  };
-
-  // Рассчитываем процент отклонения от нормы
-  const calculateDeviationPercent = () => {
-    if (reports.length === 0) return 0;
-
-    // Берём данные за последние 5 дней
-    const recentReports = reports.slice(-5);
-    const avgGram = recentReports.reduce((sum, r) => sum + (r.gram || 0), 0) / recentReports.length;
-
-    // Примерная норма для контрольной точки - 1500г
-    const norm = 1500;
-    const deviation = (((avgGram - norm) / norm) * 100).toFixed(2);
-
-    return deviation;
-  };
-
   // Берём последний отчет (сегодняшний)
   const todayReport = reports.length > 0 ? reports[reports.length - 1] : null;
-  const todayDayOfDevelopment = reports.length; // День развития = количество дней с отчетами
-
-  console.log('ReportSection render:', {
-    controlPointId,
-    controlPointName,
-    reportsLength: reports.length,
-    todayDayOfDevelopment,
-    todayReport,
-  });
 
   if (!controlPointId) {
-    console.log('No controlPointId, returning null');
     return null;
   }
 
