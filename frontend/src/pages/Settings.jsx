@@ -1,33 +1,36 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import CameraPreviewModal from '../components/CameraPreviewModal';
-import DataOutputModal from '../components/DataOutputModal';
 import Loading from '../components/Loading';
 import { farmsAPI, controlPointsAPI, camerasAPI } from '../services/api';
 
 export default function Settings() {
   const [farms, setFarms] = useState([]);
-  const [buildings, setBuildings] = useState([]);
+  const [controlPoints, setControlPoints] = useState([]);
   const [cameras, setCameras] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const [newPointData, setNewPointData] = useState({
-    farmName: '',
-    buildingName: '',
-    pointName: '',
-  });
+  // Form states for creating control point
+  const [selectedFarm, setSelectedFarm] = useState('');
+  const [frameName, setFrameName] = useState('');
+  const [controlPointName, setControlPointName] = useState('');
 
-  const [newCameraData, setNewCameraData] = useState({
-    name: '',
-    url: '',
-    control_point_id: '',
-  });
+  // Form states for adding camera
+  const [selectedControlPoint, setSelectedControlPoint] = useState('');
+  const [cameraName, setCameraName] = useState('');
+  const [cameraUrl, setCameraUrl] = useState('');
 
-  const [showCameraPreview, setShowCameraPreview] = useState(false);
-  const [selectedCamera, setSelectedCamera] = useState(null);
-  const [showImageModal, setShowImageModal] = useState(false);
+  // Form states for growth norms
+  const [selectedNormFarm, setSelectedNormFarm] = useState('');
+  const [selectedNormFrame, setSelectedNormFrame] = useState('');
+  const [selectedNormControlPoint, setSelectedNormControlPoint] = useState('');
+  const [chickensQuantity, setChickensQuantity] = useState('');
+  const [growthDay, setGrowthDay] = useState('');
+  const [initialAverageWeight, setInitialAverageWeight] = useState('');
+  const [landingDate, setLandingDate] = useState('');
+  const [closingDate, setClosingDate] = useState('');
   const [showDataOutputModal, setShowDataOutputModal] = useState(false);
+  const [showGrowthNormsModal, setShowGrowthNormsModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -36,11 +39,13 @@ export default function Settings() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [farmsRes, camerasRes] = await Promise.all([
+      const [farmsRes, controlPointsRes, camerasRes] = await Promise.all([
         farmsAPI.getFarms(),
+        controlPointsAPI.getControlPoints(),
         camerasAPI.getCameras(),
       ]);
       setFarms(farmsRes.data);
+      setControlPoints(controlPointsRes.data);
       setCameras(camerasRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -50,22 +55,24 @@ export default function Settings() {
     }
   };
 
-  const handleCreatePoint = async (e) => {
+  const handleCreateControlPoint = async (e) => {
     e.preventDefault();
+    if (!selectedFarm || !frameName || !controlPointName) {
+      alert('Пожалуйста, заполните все поля');
+      return;
+    }
 
     try {
       setSubmitting(true);
-      await controlPointsAPI.createControlPointFull({
-        farm_name: newPointData.farmName,
-        building_name: newPointData.buildingName,
-        control_point_name: newPointData.pointName,
+      await controlPointsAPI.createControlPoint({
+        farm_id: parseInt(selectedFarm),
+        frame_name: frameName,
+        name: controlPointName,
       });
-
-      alert(
-        `Точка контроля успешно создана: ${newPointData.farmName} / ${newPointData.buildingName} / ${newPointData.pointName}`
-      );
-      setNewPointData({ farmName: '', buildingName: '', pointName: '' });
-      loadData(); // Reload data to show updated lists
+      alert('Точка контроля создана успешно');
+      setFrameName('');
+      setControlPointName('');
+      loadData();
     } catch (error) {
       console.error('Error creating control point:', error);
       alert('Ошибка при создании точки контроля');
@@ -74,38 +81,82 @@ export default function Settings() {
     }
   };
 
-  const handleCreateCamera = async (e) => {
+  const handleAddCamera = async (e) => {
     e.preventDefault();
+    if (!selectedControlPoint || !cameraName || !cameraUrl) {
+      alert('Пожалуйста, заполните все поля');
+      return;
+    }
 
     try {
-      // For stub, use first control point if available
-      const controlPointId = 1;
-      await camerasAPI.createCamera({
-        name: newCameraData.name,
-        url: newCameraData.url,
-        control_point_id: controlPointId,
-      });
+      setSubmitting(true);
+      const controlPoint = controlPoints.find(cp => cp.id === parseInt(selectedControlPoint));
+      if (!controlPoint) {
+        alert('Точка контроля не найдена');
+        return;
+      }
 
-      setNewCameraData({ name: '', url: '', control_point_id: '' });
+      await camerasAPI.createCamera({
+        farm_id: controlPoint.farm_id,
+        control_point_id: parseInt(selectedControlPoint),
+        name: cameraName,
+        url: cameraUrl,
+      });
+      alert('Камера добавлена успешно');
+      setCameraName('');
+      setCameraUrl('');
       loadData();
     } catch (error) {
-      alert('Камера добавлена (заглушка)');
-      setNewCameraData({ name: '', url: '', control_point_id: '' });
+      console.error('Error adding camera:', error);
+      alert('Ошибка при добавлении камеры');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleDeleteCamera = async (cameraId) => {
+    if (!window.confirm('Вы уверены, что хотите удалить эту камеру?')) {
+      return;
+    }
+
     try {
       await camerasAPI.deleteCamera(cameraId);
+      alert('Камера удалена успешно');
       loadData();
     } catch (error) {
       console.error('Error deleting camera:', error);
+      alert('Ошибка при удалении камеры');
     }
   };
 
-  const handlePreviewCamera = (camera) => {
-    setSelectedCamera(camera);
-    setShowCameraPreview(true);
+  const handleUploadGrowthFile = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      alert(`Файл ${file.name} готов к загрузке (функция в разработке)`);
+    }
+  };
+
+  const handleResetGrowthForm = () => {
+    setChickensQuantity('');
+    setGrowthDay('');
+    setInitialAverageWeight('');
+    setLandingDate('');
+    setClosingDate('');
+  };
+
+  const handleSaveGrowthNorms = async () => {
+    if (!selectedNormFarm || !selectedNormControlPoint || !chickensQuantity || !growthDay || !initialAverageWeight || !landingDate || !closingDate) {
+      alert('Пожалуйста, заполните все поля');
+      return;
+    }
+
+    try {
+      alert('Нормы развития сохранены (функция в разработке)');
+      handleResetGrowthForm();
+    } catch (error) {
+      console.error('Error saving growth norms:', error);
+      alert('Ошибка при сохранении норм развития');
+    }
   };
 
   if (loading) {
@@ -118,195 +169,374 @@ export default function Settings() {
 
   return (
     <Layout>
-      <h1>Настройка</h1>
+      <h1>Настройка камер</h1>
 
       <div className="settings-section">
-        <h2>Создание точки контроля</h2>
-        <form onSubmit={handleCreatePoint}>
-          <div className="form-row">
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Название фермы</label>
-              <input
-                type="text"
-                value={newPointData.farmName}
-                onChange={(e) => setNewPointData({ ...newPointData, farmName: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Название корпуса</label>
-              <input
-                type="text"
-                value={newPointData.buildingName}
-                onChange={(e) => setNewPointData({ ...newPointData, buildingName: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Название точки</label>
-              <input
-                type="text"
-                value={newPointData.pointName}
-                onChange={(e) => setNewPointData({ ...newPointData, pointName: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? 'Создание...' : 'Создать точку контроля'}
-          </button>
-        </form>
-      </div>
+        <h2 className="settings-section-title">Добавление камер</h2>
 
-      <div className="settings-section">
-        <h2>Добавление камеры</h2>
-        <form onSubmit={handleCreateCamera}>
-          <div className="form-row">
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>URL камеры</label>
-              <input
-                type="text"
-                value={newCameraData.url}
-                onChange={(e) => setNewCameraData({ ...newCameraData, url: e.target.value })}
-                placeholder="rtsp://example.com/stream"
-                required
-              />
+        {/* Create Control Point Form */}
+        <div className="settings-block">
+          <h3 className="settings-block-title">Создать точку контроля</h3>
+          <form onSubmit={handleCreateControlPoint} className="settings-form">
+            <div className="form-row">
+              <div className="form-group">
+                <select 
+                  value={selectedFarm} 
+                  onChange={(e) => setSelectedFarm(e.target.value)}
+                  required
+                  className="filter-select"
+                  title="Ферма"
+                >
+                  <option value="">Выберите ферму</option>
+                  {farms.map((farm) => (
+                    <option key={farm.id} value={farm.id}>
+                      {farm.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  value={frameName}
+                  onChange={(e) => setFrameName(e.target.value)}
+                  placeholder="Название корпуса"
+                  required
+                  className="filter-input"
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  value={controlPointName}
+                  onChange={(e) => setControlPointName(e.target.value)}
+                  placeholder="Название точки контроля"
+                  required
+                  className="filter-input"
+                />
+              </div>
             </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Имя камеры</label>
-              <input
-                type="text"
-                value={newCameraData.name}
-                onChange={(e) => setNewCameraData({ ...newCameraData, name: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Добавить камеру
-          </button>
-        </form>
-      </div>
+            <button type="submit" className="btn btn-primary" disabled={submitting || !selectedFarm || !frameName || !controlPointName}>
+              {submitting ? 'Создание...' : 'Создать'}
+            </button>
+          </form>
+        </div>
 
-      <div className="settings-section">
-        <h2>Список камер</h2>
-        <div className="camera-list">
-          {cameras.length > 0 ? (
-            cameras.map((camera) => (
-              <div key={camera.id} className="camera-item">
-                <div>
-                  <strong>{camera.name}</strong>
-                  <br />
-                  <small>{camera.url}</small>
-                </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn" onClick={() => handlePreviewCamera(camera)}>
-                    Просмотр
-                  </button>
-                  <button className="btn" onClick={() => handleDeleteCamera(camera.id)}>
-                    Удалить
-                  </button>
-                </div>
+        {/* Add Camera Form */}
+        <div className="settings-block">
+          <h3 className="settings-block-title">Добавить камеру</h3>
+          <form onSubmit={handleAddCamera} className="settings-form">
+            <div className="form-row">
+              <div className="form-group">
+                <select 
+                  value={selectedControlPoint} 
+                  onChange={(e) => setSelectedControlPoint(e.target.value)}
+                  required
+                  className="filter-select"
+                  title="Точка контроля"
+                >
+                  <option value="">Выберите точку контроля</option>
+                  {controlPoints.map((cp) => (
+                    <option key={cp.id} value={cp.id}>
+                      {cp.frame_name} (Ферма {cp.farm_id})
+                    </option>
+                  ))}
+                </select>
               </div>
-            ))
-          ) : (
-            <>
-              <div className="camera-item">
-                <div>
-                  <strong>Камера 1</strong>
-                  <br />
-                  <small>rtsp://example.com/camera1</small>
-                </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    className="btn"
-                    onClick={() =>
-                      handlePreviewCamera({
-                        id: 1,
-                        name: 'Камера 1',
-                        url: 'rtsp://example.com/camera1',
-                      })
-                    }
-                  >
-                    Просмотр
-                  </button>
-                  <button className="btn">Удалить</button>
-                </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  value={cameraName}
+                  onChange={(e) => setCameraName(e.target.value)}
+                  placeholder="Имя камеры"
+                  required
+                  className="filter-input"
+                />
               </div>
-              <div className="camera-item">
-                <div>
-                  <strong>Камера 2</strong>
-                  <br />
-                  <small>rtsp://example.com/camera2</small>
-                </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    className="btn"
-                    onClick={() =>
-                      handlePreviewCamera({
-                        id: 2,
-                        name: 'Камера 2',
-                        url: 'rtsp://example.com/camera2',
-                      })
-                    }
-                  >
-                    Просмотр
-                  </button>
-                  <button className="btn">Удалить</button>
-                </div>
+              <div className="form-group">
+                <input
+                  type="url"
+                  value={cameraUrl}
+                  onChange={(e) => setCameraUrl(e.target.value)}
+                  placeholder="URL камеры"
+                  required
+                  className="filter-input"
+                />
               </div>
-            </>
-          )}
+            </div>
+            <button type="submit" className="btn btn-primary" disabled={submitting || !selectedControlPoint || !cameraName || !cameraUrl}>
+              {submitting ? 'Добавление...' : 'Добавить'}
+            </button>
+          </form>
         </div>
       </div>
 
-      <div style={{ marginTop: '30px' }}>
-        <button className="btn btn-primary" onClick={() => setShowImageModal(true)}>
-          Вывести изображение
-        </button>
-        <button
-          className="btn"
-          onClick={() => setShowDataOutputModal(true)}
-          style={{ marginLeft: '10px' }}
-        >
-          Данные нового вывода
-        </button>
+      <div className="settings-section">
+        <h2 className="settings-section-title">Список камер</h2>
+        <div className="cameras-table-container">
+          <table className="cameras-table">
+            <tbody>
+              {cameras.length > 0 ? (
+                cameras.map((camera) => (
+                  <tr key={camera.id}>
+                    <td className="camera-url-cell">{camera.url}</td>
+                    <td className="camera-name-cell">{camera.name}</td>
+                    <td className="camera-action-cell">
+                      <button 
+                        className="btn-delete-camera"
+                        onClick={() => handleDeleteCamera(camera.id)}
+                        title="Удалить камеру"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          <line x1="10" y1="11" x2="10" y2="17"></line>
+                          <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="no-data">Камер не найдено</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <CameraPreviewModal
-        isOpen={showCameraPreview}
-        onClose={() => setShowCameraPreview(false)}
-        camera={selectedCamera}
-      />
+      <div className="settings-section">
+        <h2 className="settings-section-title">Общее</h2>
 
-      {showImageModal && (
-        <div className="modal-overlay" onClick={() => setShowImageModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Вывести изображение</h2>
-            <div
-              style={{
-                width: '100%',
-                height: '300px',
-                backgroundColor: '#ccc',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                border: '1px solid #999',
-                marginTop: '20px',
-              }}
-            >
-              <p>Заглушка вывода изображения</p>
+        {/* Growth norms block */}
+        <div className="settings-block">
+          <div className="file-upload-container">
+            <input 
+              type="file" 
+              id="growth-file"
+              onChange={handleUploadGrowthFile}
+              className="file-input"
+              accept=".xlsx,.xls,.csv"
+            />
+            <label htmlFor="growth-file" className="file-label">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '8px' }}>
+                <path d="M11.6667 1.96232V3.99992C11.6667 4.93334 11.6667 5.40005 11.8483 5.75657C12.0081 6.07017 12.2631 6.32514 12.5767 6.48493C12.9332 6.66658 13.3999 6.66658 14.3333 6.66658H17.0331M11.6667 1.96232C11.4522 1.87692 11.2307 1.80938 11.0044 1.76055C10.5699 1.66675 10.1104 1.66675 9.19137 1.66675C6.84135 1.66675 5.66634 1.66675 4.77504 2.12089C3.99103 2.52036 3.35361 3.15778 2.95414 3.94179C2.5 4.83309 2.5 5.99986 2.5 8.33341V11.6667C2.5 14.0003 2.5 15.1671 2.95414 16.0584C3.35361 16.8424 3.99103 17.4798 4.77504 17.8793C5.66634 18.3334 6.83311 18.3334 9.16667 18.3334H10.8333C13.1669 18.3334 14.3337 18.3334 15.225 17.8793C16.009 17.4798 16.6464 16.8424 17.0459 16.0584C17.5 15.1671 17.5 14.0003 17.5 11.6667V9.73298C17.5 8.60517 17.5 8.04126 17.3614 7.51741C17.2833 7.22213 17.1731 6.93686 17.0331 6.66658M11.6667 1.96232C11.8176 2.02244 11.9652 2.0914 12.1084 2.16894C12.4994 2.38053 12.846 2.67758 13.5391 3.2717L15.1719 4.67127C16.0282 5.40524 16.4564 5.77223 16.7639 6.21838C16.8631 6.36225 16.953 6.51196 17.0331 6.66658" stroke="#17672F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Файл с нормами развития
+            </label>
+            <button className="btn btn-primary" style={{ maxWidth: '150px' }}>
+              Вгрузить
+            </button>
+            <button className="btn btn-dark" style={{ maxWidth: '150px' }}>
+              Заменить
+            </button>
+          </div>
+
+          <div className="growth-filters">
+            <div className="form-group">
+              <select 
+                value={selectedNormFarm} 
+                onChange={(e) => {
+                  setSelectedNormFarm(e.target.value);
+                  setSelectedNormFrame('');
+                  setSelectedNormControlPoint('');
+                }}
+                className="filter-select"
+                title="Ферма"
+              >
+                <option value="">Выберите ферму</option>
+                {farms.map((farm) => (
+                  <option key={farm.id} value={farm.id}>
+                    {farm.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="modal-actions">
-              <button className="btn btn-primary" onClick={() => setShowImageModal(false)}>
-                Закрыть
+            <div className="form-group">
+              <select 
+                value={selectedNormFrame} 
+                onChange={(e) => {
+                  setSelectedNormFrame(e.target.value);
+                  setSelectedNormControlPoint('');
+                }}
+                className="filter-select"
+                title="Корпус"
+                disabled={!selectedNormFarm}
+              >
+                <option value="">Выберите корпус</option>
+                {selectedNormFarm && Array.from(new Set(controlPoints.filter(cp => cp.farm_id === parseInt(selectedNormFarm)).map(cp => cp.frame_name))).map((frame) => (
+                  <option key={frame} value={frame}>
+                    {frame}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <select 
+                value={selectedNormControlPoint} 
+                onChange={(e) => setSelectedNormControlPoint(e.target.value)}
+                className="filter-select"
+                title="Контрольная точка"
+                disabled={!selectedNormFrame}
+              >
+                <option value="">Выберите точку контроля</option>
+                {selectedNormFrame && controlPoints.filter(cp => cp.farm_id === parseInt(selectedNormFarm) && cp.frame_name === selectedNormFrame).map((cp) => (
+                  <option key={cp.id} value={cp.id}>
+                    {cp.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="growth-filters-buttons">
+              <button 
+                className="btn btn-outlined"
+                onClick={() => setShowGrowthNormsModal(true)}
+              >
+                Внести данные
+              </button>
+              <button 
+                className="btn btn-primary" 
+                disabled={!selectedNormFarm || !selectedNormFrame || !selectedNormControlPoint}
+              >
+                Применить
+              </button>
+              <button 
+                className="btn btn-dark" 
+                onClick={() => {
+                  setSelectedNormFarm('');
+                  setSelectedNormFrame('');
+                  setSelectedNormControlPoint('');
+                }}
+              >
+                Обнулить
               </button>
             </div>
           </div>
         </div>
+
+        <div className="settings-block-actions">
+          <button className="btn btn-primary">
+            Сохранить
+          </button>
+          <button className="btn btn-dark">
+            Отменить
+          </button>
+        </div>
+      </div>
+
+      {/* Data output modal */}
+      {showDataOutputModal && (
+        <div className="modal-overlay" onClick={() => setShowDataOutputModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Данные нового выводка</h2>
+            <form className="modal-form">
+              <div className="form-group">
+                <input type="text" placeholder="Название выводка" className="filter-input" />
+              </div>
+              <div className="form-group">
+                <input type="date" placeholder="Дата выводка" className="filter-input" />
+              </div>
+              <div className="form-group">
+                <input type="number" placeholder="Количество" className="filter-input" />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-primary" onClick={() => setShowDataOutputModal(false)}>
+                  Сохранить
+                </button>
+                <button type="button" className="btn btn-dark" onClick={() => setShowDataOutputModal(false)}>
+                  Отменить
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
-      <DataOutputModal isOpen={showDataOutputModal} onClose={() => setShowDataOutputModal(false)} />
+      {/* Growth norms form modal */}
+      {showGrowthNormsModal && (
+        <div className="modal-overlay" onClick={() => setShowGrowthNormsModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Данные нового выводка</h2>
+            <form className="modal-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <input
+                    type="number"
+                    value={chickensQuantity}
+                    onChange={(e) => setChickensQuantity(e.target.value)}
+                    placeholder="Количество особей"
+                    className="filter-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="number"
+                    value={growthDay}
+                    onChange={(e) => setGrowthDay(e.target.value)}
+                    placeholder="День развития"
+                    className="filter-input"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={initialAverageWeight}
+                    onChange={(e) => setInitialAverageWeight(e.target.value)}
+                    placeholder="Начальный средний вес (г)"
+                    className="filter-input"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <input
+                    type="date"
+                    value={landingDate}
+                    onChange={(e) => setLandingDate(e.target.value)}
+                    placeholder="Дата посадки"
+                    className="filter-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="date"
+                    value={closingDate}
+                    onChange={(e) => setClosingDate(e.target.value)}
+                    placeholder="Дата закрытия"
+                    className="filter-input"
+                  />
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button 
+                  type="button"
+                  className="btn btn-primary" 
+                  onClick={handleSaveGrowthNorms}
+                  disabled={!chickensQuantity || !growthDay || !initialAverageWeight || !landingDate || !closingDate}
+                >
+                  Сохранить
+                </button>
+                <button 
+                  type="button"
+                  className="btn btn-dark" 
+                  onClick={() => {
+                    setShowGrowthNormsModal(false);
+                    handleResetGrowthForm();
+                  }}
+                >
+                  Отменить
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import AlertModal from '../components/AlertModal';
 import Loading from '../components/Loading';
+import FiltersForm from '../components/FiltersForm';
+import ReportSection from '../components/ReportSection';
 import { farmsAPI, controlPointsAPI, reportsAPI } from '../services/api';
 
 export default function General() {
@@ -16,6 +18,8 @@ export default function General() {
   const [alertMessage, setAlertMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [filtering, setFiltering] = useState(false);
+  const [selectedControlPointId, setSelectedControlPointId] = useState(null);
+  const [selectedControlPointName, setSelectedControlPointName] = useState('');
 
   useEffect(() => {
     // Show alert immediately before loading data
@@ -100,112 +104,16 @@ export default function General() {
     <Layout>
       <h1>Общее</h1>
 
-      <div className="filters">
-        <div className="filter-group">
-          <label>Ферма</label>
-          <select
-            multiple
-            value={selectedFarms}
-            onChange={(e) => {
-              const options = Array.from(e.target.selectedOptions);
-              const values = options.map((opt) => parseInt(opt.value));
-              setSelectedFarms(values);
-              if (values.length > 0) {
-                farmsAPI.getBuildings(values[0]).then((res) => setBuildings(res.data));
-              }
-            }}
-            size="5"
-          >
-            {farms.map((farm) => (
-              <option key={farm.id} value={farm.id}>
-                {farm.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <FiltersForm onFilter={(filters) => {
+        console.log('Filters applied:', filters);
+        setSelectedControlPointId(filters.control_point_id);
+        setSelectedControlPointName(filters.control_point_name || '');
+      }} />
 
-        <div className="filter-group">
-          <label>Корпус</label>
-          <select
-            multiple
-            value={selectedBuildings}
-            onChange={(e) => {
-              const options = Array.from(e.target.selectedOptions);
-              const values = options.map((opt) => parseInt(opt.value));
-              setSelectedBuildings(values);
-            }}
-            size="5"
-          >
-            {buildings.map((building) => (
-              <option key={building.id} value={building.id}>
-                {building.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>Точка контроля</label>
-          <select multiple size="5">
-            <option>Точка 1</option>
-            <option>Точка 2</option>
-            <option>Точка 3</option>
-          </select>
-        </div>
-
-        <button className="btn btn-primary" onClick={handleFilter} disabled={filtering}>
-          {filtering ? 'Загрузка...' : 'OK'}
-        </button>
-      </div>
-
-      <div className="input-fields">
-        <div className="input-field">
-          <label>Точка контроля</label>
-          <input type="text" readOnly />
-        </div>
-        <div className="input-field">
-          <label>День развития</label>
-          <input type="text" readOnly />
-        </div>
-        <div className="input-field">
-          <label>Среднее отклонение на сегодня</label>
-          <input type="text" readOnly />
-        </div>
-      </div>
-
-      <div className="cards-container">
-        {filteredPoints.map((point) => (
-          <div key={point.id} className="card">
-            <h3>{point.name}</h3>
-            <p>Ферма: {point.farm_name}</p>
-            <p>Корпус: {point.building_name}</p>
-            <p>День развития: {point.day_of_development}</p>
-            <p>Отклонение: {point.average_deviation}</p>
-          </div>
-        ))}
-
-        {filteredPoints.length === 0 && (
-          <>
-            <div className="card">
-              <h3>Параметр 1</h3>
-              <p>Значение: 100</p>
-              <p>Статус: Норма</p>
-            </div>
-            <div className="card">
-              <h3>Параметр 2</h3>
-              <p>Значение: 95</p>
-              <p>Статус: Норма</p>
-            </div>
-            <div className="card">
-              <h3>Параметр 3</h3>
-              <p>Значение: 88</p>
-              <p>Статус: Внимание</p>
-            </div>
-          </>
-        )}
-      </div>
-
-      <AlertModal isOpen={showAlert} onClose={() => setShowAlert(false)} message={alertMessage} />
+      <ReportSection 
+        controlPointId={selectedControlPointId} 
+        controlPointName={selectedControlPointName}
+      />
     </Layout>
   );
 }

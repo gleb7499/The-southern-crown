@@ -1,94 +1,75 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import CalendarModal from '../components/CalendarModal';
-import ExportFormatModal from '../components/ExportFormatModal';
 import Loading from '../components/Loading';
-import { farmsAPI, reportsAPI } from '../services/api';
+import FiltersForm from '../components/FiltersForm';
+import { farmsAPI } from '../services/api';
 
 export default function Reports() {
-  const [farms, setFarms] = useState([]);
-  const [buildings, setBuildings] = useState([]);
-  const [selectedFarms, setSelectedFarms] = useState([]);
-  const [selectedBuildings, setSelectedBuildings] = useState([]);
-  const [selectedControlPoints, setSelectedControlPoints] = useState([]);
-  const [selectedIndicator, setSelectedIndicator] = useState('');
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [showExport, setShowExport] = useState(false);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [selectingDate, setSelectingDate] = useState('');
-  const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
+  const [selectedControlPointId, setSelectedControlPointId] = useState(null);
+  const [selectedControlPointName, setSelectedControlPointName] = useState('');
+  const [selectedWeight, setSelectedWeight] = useState('средний вес');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [chartData, setChartData] = useState(null);
 
   useEffect(() => {
-    loadFarms();
+    loadInitialData();
   }, []);
 
-  const loadFarms = async () => {
+  const loadInitialData = async () => {
     try {
       setLoading(true);
       const farmsRes = await farmsAPI.getFarms();
-      setFarms(farmsRes.data);
     } catch (error) {
-      console.error('Error loading farms:', error);
+      console.error('Error loading data:', error);
       alert('Ошибка при загрузке данных');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFarmChange = async (farmId) => {
-    const newSelected = selectedFarms.includes(farmId)
-      ? selectedFarms.filter((id) => id !== farmId)
-      : [...selectedFarms, farmId];
-
-    setSelectedFarms(newSelected);
-
-    if (newSelected.length > 0) {
-      try {
-        const buildingsRes = await farmsAPI.getBuildings(newSelected[0]);
-        setBuildings(buildingsRes.data);
-      } catch (error) {
-        console.error('Error loading buildings:', error);
-      }
+  const handleGenerateChart = async () => {
+    if (!selectedControlPointId || !selectedDate) {
+      alert('Пожалуйста, выберите точку контроля и дату');
+      return;
     }
-  };
 
-  const handleDateSelect = (field) => {
-    setSelectingDate(field);
-    setShowCalendar(true);
-  };
-
-  const handleCalendarSelect = (date) => {
-    if (selectingDate === 'start') {
-      setStartDate(date);
-    } else if (selectingDate === 'end') {
-      setEndDate(date);
-    }
-  };
-
-  const handleGenerate = async () => {
     try {
-      setGenerating(true);
-      const res = await reportsAPI.generate({
-        farm_ids: selectedFarms,
-        building_ids: selectedBuildings,
-        control_point_ids: selectedControlPoints.length > 0 ? selectedControlPoints : [1, 2, 3],
-        indicator: selectedIndicator || 'средний вес',
-        start_date: startDate ? startDate.toISOString().split('T')[0] : null,
-        end_date: endDate ? endDate.toISOString().split('T')[0] : null,
+      // Загружаем данные отчета для выбранной точки контроля
+      const response = await fetch(`/api/reports/?control_point_id=${selectedControlPointId}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
-      setReportData(res.data);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const sortedReports = (data || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      setChartData({
+        controlPointName: selectedControlPointName,
+        reports: sortedReports,
+        date: selectedDate,
+        weight: selectedWeight
+      });
     } catch (error) {
-      console.error('Error generating report:', error);
-      alert('Ошибка при генерации отчёта');
-    } finally {
-      setGenerating(false);
+      console.error('Error loading chart data:', error);
+      alert('Ошибка при загрузке данных графика');
     }
   };
 
-  const indicators = ['средний вес', '%', 'единобразие', 'стандартное отклонение'];
+  const handleExportXLSX = () => {
+    alert('Экспорт в XLSX - в разработке');
+  };
+
+  const handleExportCSV = () => {
+    alert('Экспорт в CSV - в разработке');
+  };
 
   if (loading) {
     return (
@@ -100,171 +81,101 @@ export default function Reports() {
 
   return (
     <Layout>
-      <h1>Отчёты</h1>
+      <h1>Отчеты</h1>
 
-      <div className="filters">
-        <div className="filter-group">
-          <label>Ферма</label>
-          <select
-            multiple
-            value={selectedFarms}
-            onChange={(e) => {
-              const options = Array.from(e.target.selectedOptions);
-              const values = options.map((opt) => parseInt(opt.value));
-              setSelectedFarms(values);
-              if (values.length > 0) {
-                farmsAPI.getBuildings(values[0]).then((res) => setBuildings(res.data));
-              }
-            }}
-            size="3"
-          >
-            {farms.map((farm) => (
-              <option key={farm.id} value={farm.id}>
-                {farm.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <FiltersForm onFilter={(filters) => {
+        console.log('Filters applied:', filters);
+        setSelectedControlPointId(filters.control_point_id);
+        setSelectedControlPointName(filters.control_point_name || '');
+      }} />
 
-        <div className="filter-group">
-          <label>Корпус</label>
-          <select
-            multiple
-            value={selectedBuildings}
-            onChange={(e) => {
-              const options = Array.from(e.target.selectedOptions);
-              const values = options.map((opt) => parseInt(opt.value));
-              setSelectedBuildings(values);
-            }}
-            size="3"
-          >
-            {buildings.map((building) => (
-              <option key={building.id} value={building.id}>
-                {building.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="chart-section">
+        <h2 className="chart-section-title">Отклонение по точкам</h2>
 
-        <div className="filter-group">
-          <label>Точка контроля</label>
-          <select multiple size="3">
-            <option>Точка 1</option>
-            <option>Точка 2</option>
-            <option>Точка 3</option>
-          </select>
-        </div>
+        <div className="chart-controls">
+          <div className="control-group">
+            <label>Средний вес</label>
+            <select 
+              value={selectedWeight} 
+              onChange={(e) => setSelectedWeight(e.target.value)}
+              className="filter-select"
+            >
+              <option value="средний вес">Средний вес</option>
+              <option value="минимальный вес">Минимальный вес</option>
+              <option value="максимальный вес">Максимальный вес</option>
+              <option value="стандартное отклонение">Стандартное отклонение</option>
+            </select>
+          </div>
 
-        <button className="btn btn-primary" onClick={handleGenerate}>
-          OK
-        </button>
-      </div>
+          <div className="control-group">
+            <label>Дата</label>
+            <input 
+              type="date" 
+              value={selectedDate} 
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="filter-input"
+            />
+          </div>
 
-      <div className="report-controls">
-        <div className="form-group">
-          <label>Выбор показателя</label>
-          <select value={selectedIndicator} onChange={(e) => setSelectedIndicator(e.target.value)}>
-            <option value="">Выберите показатель</option>
-            {indicators.map((indicator) => (
-              <option key={indicator} value={indicator}>
-                {indicator}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-          <button className="btn" onClick={() => handleDateSelect('start')}>
-            Начальная дата {startDate ? `: ${startDate.toLocaleDateString('ru-RU')}` : ''}
-          </button>
-          <button className="btn" onClick={() => handleDateSelect('end')}>
-            Конечная дата {endDate ? `: ${endDate.toLocaleDateString('ru-RU')}` : ''}
+          <button className="btn btn-primary" onClick={handleGenerateChart}>
+            Сформировать
           </button>
         </div>
 
-        <div style={{ marginTop: '15px' }}>
-          <button className="btn btn-primary" onClick={handleGenerate} disabled={generating}>
-            {generating ? 'Генерация...' : 'Сформировать'}
-          </button>
-        </div>
-      </div>
-
-      {generating && <Loading message="Генерация отчёта..." />}
-
-      <div className="charts-container">
-        {reportData ? (
-          <>
-            {reportData.charts.map((chart, index) => (
-              <div key={index} className="chart">
-                <h3>{chart.control_point_name}</h3>
-                <div className="chart-placeholder">График: {chart.control_point_name}</div>
-                <div className="chart-labels">
-                  <span>Отклонение в граммах (Y)</span>
-                  <span>День развития (X)</span>
-                </div>
-              </div>
-            ))}
-
+        {chartData && (
+          <div className="chart-container">
             <div className="chart">
-              <h3>Отклонение общее</h3>
-              <div className="chart-placeholder">
-                График: {reportData.overall_deviation.control_point_name}
-              </div>
-              <div className="chart-labels">
-                <span>Отклонение в граммах (Y)</span>
-                <span>День развития (X)</span>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="chart">
-              <h3>График 1</h3>
-              <div className="chart-placeholder">Заглушка графика</div>
-              <div className="chart-labels">
-                <span>Отклонение в граммах (Y)</span>
-                <span>День развития (X)</span>
-              </div>
+              <h3 className="chart-title">{chartData.controlPointName}</h3>
+              <svg viewBox="0 0 800 400" className="chart-svg">
+                {/* Сетка */}
+                <line x1="60" y1="350" x2="800" y2="350" stroke="#e0e0e0" strokeWidth="1" />
+                <line x1="60" y1="260" x2="800" y2="260" stroke="#e0e0e0" strokeWidth="1" />
+                <line x1="60" y1="170" x2="800" y2="170" stroke="#e0e0e0" strokeWidth="1" />
+                <line x1="60" y1="80" x2="800" y2="80" stroke="#e0e0e0" strokeWidth="1" />
+
+                {/* Метки на оси Y (граммы) */}
+                <text x="50" y="355" fontSize="12" textAnchor="end" fill="#616661">0г</text>
+                <text x="50" y="265" fontSize="12" textAnchor="end" fill="#616661">500г</text>
+                <text x="50" y="175" fontSize="12" textAnchor="end" fill="#616661">1000г</text>
+                <text x="50" y="85" fontSize="12" textAnchor="end" fill="#616661">1500г</text>
+
+                {/* Данные графика */}
+
+                {/* Линии между точками */}
+                {chartData.reports.map((report, index) => {
+                  if (index === 0) return null;
+                  const x1 = 80 + ((index - 1) * (700 / Math.max(chartData.reports.length - 1, 1)));
+                  const y1 = 350 - (chartData.reports[index - 1].gram / 1500) * 260;
+                  const x2 = 80 + (index * (700 / Math.max(chartData.reports.length - 1, 1)));
+                  const y2 = 350 - (report.gram / 1500) * 260;
+                  return (
+                    <line key={`line-${index}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#17672F" strokeWidth="2" />
+                  );
+                })}
+
+                {/* Метки на оси X (дни) */}
+                {chartData.reports.map((report, index) => {
+                  const x = 80 + (index * (700 / Math.max(chartData.reports.length - 1, 1)));
+                  return (
+                    <text key={`label-${index}`} x={x} y="375" fontSize="12" textAnchor="middle" fill="#616661">
+                      {index + 1}
+                    </text>
+                  );
+                })}
+              </svg>
             </div>
 
-            <div className="chart">
-              <h3>График 2</h3>
-              <div className="chart-placeholder">Заглушка графика</div>
-              <div className="chart-labels">
-                <span>Отклонение в граммах (Y)</span>
-                <span>День развития (X)</span>
-              </div>
+            <div className="chart-actions">
+              <button className="btn btn-primary" onClick={handleExportXLSX}>
+                Выгрузить XLSX
+              </button>
+              <button className="btn btn-outlined" onClick={handleExportCSV}>
+                Выгрузить CSV
+              </button>
             </div>
-
-            <div className="chart">
-              <h3>Отклонение общее</h3>
-              <div className="chart-placeholder">Заглушка графика</div>
-              <div className="chart-labels">
-                <span>Отклонение в граммах (Y)</span>
-                <span>День развития (X)</span>
-              </div>
-            </div>
-          </>
+          </div>
         )}
       </div>
-
-      <div style={{ marginTop: '30px' }}>
-        <button className="btn btn-primary" onClick={() => setShowExport(true)}>
-          Выгрузить
-        </button>
-      </div>
-
-      <CalendarModal
-        isOpen={showCalendar}
-        onClose={() => setShowCalendar(false)}
-        onSelect={handleCalendarSelect}
-      />
-
-      <ExportFormatModal
-        isOpen={showExport}
-        onClose={() => setShowExport(false)}
-        reportData={reportData}
-      />
     </Layout>
   );
 }

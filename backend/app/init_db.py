@@ -84,14 +84,19 @@ def init_db():
                         )
                         db.add(growth_rate)
 
-                        # Add sample report data
-                        report = Report(
-                            farm_id=farm.id,
-                            control_point_id=control_point.id,
-                            date=date.today(),
-                            gram=1250 + (j * 50),
-                        )
-                        db.add(report)
+                        # Add sample report data for multiple days (last 15 days)
+                        base_gram = 1250 + (j * 50)
+                        for day_offset in range(15, 0, -1):
+                            report_date = date.today() - timedelta(days=day_offset)
+                            # Incremental gram values for each day
+                            gram_value = base_gram - (15 - day_offset) * 80
+                            report = Report(
+                                farm_id=farm.id,
+                                control_point_id=control_point.id,
+                                date=report_date,
+                                gram=max(500, gram_value),  # Min 500g
+                            )
+                            db.add(report)
 
             print("Created sample farms, control points, cameras, growth rates, and reports")
 

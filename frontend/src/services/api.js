@@ -52,6 +52,12 @@ export const camerasAPI = {
 export const reportsAPI = {
   generate: (data) => api.post('/api/reports/generate', data),
   getAlert: () => api.get('/api/reports/alert'),
+  getReports: (filters) => {
+    const params = {};
+    if (filters?.control_point_id) params.control_point_id = filters.control_point_id;
+    if (filters?.farm_id) params.farm_id = filters.farm_id;
+    return api.get('/api/reports', { params });
+  },
 };
 
 export default api;

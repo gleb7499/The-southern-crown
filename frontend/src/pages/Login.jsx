@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import Modal from '../components/Modal';
+import logo from '../assets/logo.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -30,13 +31,13 @@ export default function Login() {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>Авторизация</h1>
+        <img src={logo} alt="Южная Корона" className="logo" />
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
             <input
               id="email"
               type="email"
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               aria-label="Email адрес"
@@ -45,10 +46,10 @@ export default function Login() {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Пароль</label>
             <input
               id="password"
               type="password"
+              placeholder="Пароль"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               aria-label="Пароль"
