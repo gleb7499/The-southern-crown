@@ -104,14 +104,16 @@ export default function General() {
     <Layout>
       <h1>Общее</h1>
 
-      <FiltersForm onFilter={(filters) => {
-        console.log('Filters applied:', filters);
-        setSelectedControlPointId(filters.control_point_id);
-        setSelectedControlPointName(filters.control_point_name || '');
-      }} />
+      <FiltersForm
+        onFilter={(filters) => {
+          console.log('Filters applied:', filters);
+          setSelectedControlPointId(filters.control_point_id);
+          setSelectedControlPointName(filters.control_point_name || '');
+        }}
+      />
 
-      <ReportSection 
-        controlPointId={selectedControlPointId} 
+      <ReportSection
+        controlPointId={selectedControlPointId}
         controlPointName={selectedControlPointName}
       />
     </Layout>

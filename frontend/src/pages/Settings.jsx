@@ -3,6 +3,8 @@ import Layout from '../components/Layout';
 import Loading from '../components/Loading';
 import { farmsAPI, controlPointsAPI, camerasAPI } from '../services/api';
 
+const ADD_FARM_OPTION_VALUE = '__add_farm__';
+
 export default function Settings() {
   const [farms, setFarms] = useState([]);
   const [controlPoints, setControlPoints] = useState([]);
@@ -10,13 +12,20 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Add farm modal
+  const [showAddFarmModal, setShowAddFarmModal] = useState(false);
+  const [newFarmName, setNewFarmName] = useState('');
+  const [creatingFarm, setCreatingFarm] = useState(false);
+
   // Form states for creating control point
   const [selectedFarm, setSelectedFarm] = useState('');
   const [frameName, setFrameName] = useState('');
   const [controlPointName, setControlPointName] = useState('');
 
   // Form states for adding camera
-  const [selectedControlPoint, setSelectedControlPoint] = useState('');
+  const [selectedCameraFarm, setSelectedCameraFarm] = useState('');
+  const [selectedCameraFrame, setSelectedCameraFrame] = useState('');
+  const [selectedCameraControlPoint, setSelectedCameraControlPoint] = useState('');
   const [cameraName, setCameraName] = useState('');
   const [cameraUrl, setCameraUrl] = useState('');
 
@@ -55,6 +64,29 @@ export default function Settings() {
     }
   };
 
+  // Derived camera selection options
+  const cameraFrameOptions = (() => {
+    if (!selectedCameraFarm) return [];
+    const farmId = parseInt(selectedCameraFarm);
+    return Array.from(
+      new Set(
+        controlPoints
+          .filter((cp) => cp.farm_id === farmId)
+          .map((cp) => cp.frame_name)
+          .filter(Boolean)
+      )
+    );
+  })();
+
+  const cameraControlPointOptions = (() => {
+    if (!selectedCameraFarm) return [];
+    const farmId = parseInt(selectedCameraFarm);
+    return controlPoints.filter(
+      (cp) =>
+        cp.farm_id === farmId && (!selectedCameraFrame || cp.frame_name === selectedCameraFrame)
+    );
+  })();
+
   const handleCreateControlPoint = async (e) => {
     e.preventDefault();
     if (!selectedFarm || !frameName || !controlPointName) {
@@ -81,16 +113,60 @@ export default function Settings() {
     }
   };
 
+  const closeAddFarmModal = () => {
+    if (creatingFarm) return;
+    setShowAddFarmModal(false);
+    setNewFarmName('');
+  };
+
+  const handleCreateFarm = async (e) => {
+    e.preventDefault();
+
+    const trimmedName = newFarmName.trim();
+    if (!trimmedName) {
+      alert('Пожалуйста, введите название фермы');
+      return;
+    }
+
+    try {
+      setCreatingFarm(true);
+      const res = await farmsAPI.createFarm({ name: trimmedName });
+
+      setFarms((prev) => {
+        const next = [...prev, res.data];
+        next.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ru'));
+        return next;
+      });
+
+      setSelectedFarm(String(res.data.id));
+      setShowAddFarmModal(false);
+      setNewFarmName('');
+      alert('Ферма создана');
+    } catch (error) {
+      console.error('Error creating farm:', error);
+      const status = error?.response?.status;
+      if (status === 403) {
+        alert('Недостаточно прав для создания фермы');
+      } else {
+        alert('Ошибка при создании фермы');
+      }
+    } finally {
+      setCreatingFarm(false);
+    }
+  };
+
   const handleAddCamera = async (e) => {
     e.preventDefault();
-    if (!selectedControlPoint || !cameraName || !cameraUrl) {
+    if (!selectedCameraControlPoint || !cameraName || !cameraUrl) {
       alert('Пожалуйста, заполните все поля');
       return;
     }
 
     try {
       setSubmitting(true);
-      const controlPoint = controlPoints.find(cp => cp.id === parseInt(selectedControlPoint));
+      const controlPoint = controlPoints.find(
+        (cp) => cp.id === parseInt(selectedCameraControlPoint)
+      );
       if (!controlPoint) {
         alert('Точка контроля не найдена');
         return;
@@ -98,11 +174,14 @@ export default function Settings() {
 
       await camerasAPI.createCamera({
         farm_id: controlPoint.farm_id,
-        control_point_id: parseInt(selectedControlPoint),
+        control_point_id: parseInt(selectedCameraControlPoint),
         name: cameraName,
         url: cameraUrl,
       });
       alert('Камера добавлена успешно');
+      setSelectedCameraControlPoint('');
+      setSelectedCameraFrame('');
+      setSelectedCameraFarm('');
       setCameraName('');
       setCameraUrl('');
       loadData();
@@ -145,7 +224,15 @@ export default function Settings() {
   };
 
   const handleSaveGrowthNorms = async () => {
-    if (!selectedNormFarm || !selectedNormControlPoint || !chickensQuantity || !growthDay || !initialAverageWeight || !landingDate || !closingDate) {
+    if (
+      !selectedNormFarm ||
+      !selectedNormControlPoint ||
+      !chickensQuantity ||
+      !growthDay ||
+      !initialAverageWeight ||
+      !landingDate ||
+      !closingDate
+    ) {
       alert('Пожалуйста, заполните все поля');
       return;
     }
@@ -180,14 +267,22 @@ export default function Settings() {
           <form onSubmit={handleCreateControlPoint} className="settings-form">
             <div className="form-row">
               <div className="form-group">
-                <select 
-                  value={selectedFarm} 
-                  onChange={(e) => setSelectedFarm(e.target.value)}
+                <select
+                  value={selectedFarm}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === ADD_FARM_OPTION_VALUE) {
+                      setShowAddFarmModal(true);
+                      return;
+                    }
+                    setSelectedFarm(value);
+                  }}
                   required
                   className="filter-select"
                   title="Ферма"
                 >
                   <option value="">Выберите ферму</option>
+                  <option value={ADD_FARM_OPTION_VALUE}>+ Добавить ферму…</option>
                   {farms.map((farm) => (
                     <option key={farm.id} value={farm.id}>
                       {farm.name}
@@ -216,7 +311,11 @@ export default function Settings() {
                 />
               </div>
             </div>
-            <button type="submit" className="btn btn-primary" disabled={submitting || !selectedFarm || !frameName || !controlPointName}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={submitting || !selectedFarm || !frameName || !controlPointName}
+            >
               {submitting ? 'Создание...' : 'Создать'}
             </button>
           </form>
@@ -226,34 +325,89 @@ export default function Settings() {
         <div className="settings-block">
           <h3 className="settings-block-title">Добавить камеру</h3>
           <form onSubmit={handleAddCamera} className="settings-form">
-            <div className="form-row">
+            <div className="form-row add-camera-select-row">
               <div className="form-group">
-                <select 
-                  value={selectedControlPoint} 
-                  onChange={(e) => setSelectedControlPoint(e.target.value)}
-                  required
+                <select
+                  value={selectedCameraFarm}
+                  onChange={(e) => {
+                    setSelectedCameraFarm(e.target.value);
+                    setSelectedCameraFrame('');
+                    setSelectedCameraControlPoint('');
+                  }}
                   className="filter-select"
-                  title="Точка контроля"
+                  title="Ферма"
                 >
-                  <option value="">Выберите точку контроля</option>
-                  {controlPoints.map((cp) => (
-                    <option key={cp.id} value={cp.id}>
-                      {cp.frame_name} (Ферма {cp.farm_id})
+                  <option value="">Выберите ферму</option>
+                  {farms.map((farm) => (
+                    <option key={farm.id} value={farm.id}>
+                      {farm.name}
                     </option>
                   ))}
                 </select>
               </div>
+
               <div className="form-group">
-                <input
-                  type="text"
-                  value={cameraName}
-                  onChange={(e) => setCameraName(e.target.value)}
-                  placeholder="Имя камеры"
-                  required
-                  className="filter-input"
-                />
+                <select
+                  value={selectedCameraFrame}
+                  onChange={(e) => {
+                    setSelectedCameraFrame(e.target.value);
+                    setSelectedCameraControlPoint('');
+                  }}
+                  className="filter-select"
+                  title="Корпус"
+                  disabled={!selectedCameraFarm}
+                >
+                  <option value="">Выберите корпус</option>
+                  {cameraFrameOptions.map((frame) => (
+                    <option key={frame} value={frame}>
+                      {frame}
+                    </option>
+                  ))}
+                </select>
               </div>
+
               <div className="form-group">
+                <select
+                  value={selectedCameraControlPoint}
+                  onChange={(e) => setSelectedCameraControlPoint(e.target.value)}
+                  className="filter-select"
+                  title="Контрольная точка"
+                  disabled={!selectedCameraFrame}
+                >
+                  <option value="">Выберите точку</option>
+                  {cameraControlPointOptions.map((cp) => (
+                    <option key={cp.id} value={cp.id}>
+                      {cp.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group add-camera-ok">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-full"
+                  disabled={!selectedCameraControlPoint}
+                >
+                  Ок
+                </button>
+              </div>
+            </div>
+
+            <div className="form-row add-camera-hints-row">
+              <div className="form-group" style={{ flex: 2 }}>
+                <div className="add-camera-hint">URL камеры</div>
+              </div>
+
+              <div className="form-group" style={{ flex: 2 }}>
+                <div className="add-camera-hint">Название точки</div>
+              </div>
+
+              <div className="form-group" style={{ flex: 1 }} />
+            </div>
+
+            <div className="form-row add-camera-inputs-row">
+              <div className="form-group" style={{ flex: 2 }}>
                 <input
                   type="url"
                   value={cameraUrl}
@@ -261,12 +415,40 @@ export default function Settings() {
                   placeholder="URL камеры"
                   required
                   className="filter-input"
+                  disabled={!selectedCameraControlPoint}
                 />
               </div>
+
+              <div className="form-group" style={{ flex: 2 }}>
+                <input
+                  type="text"
+                  value={cameraName}
+                  onChange={(e) => setCameraName(e.target.value)}
+                  placeholder="Название точки"
+                  required
+                  className="filter-input"
+                  disabled={!selectedCameraControlPoint}
+                />
+              </div>
+
+              <div
+                className="form-group"
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                }}
+              >
+                <button
+                  type="submit"
+                  className="btn btn-outlined btn-full"
+                  disabled={submitting || !selectedCameraControlPoint || !cameraName || !cameraUrl}
+                >
+                  {submitting ? 'Добавление...' : 'Вывести'}
+                </button>
+              </div>
             </div>
-            <button type="submit" className="btn btn-primary" disabled={submitting || !selectedControlPoint || !cameraName || !cameraUrl}>
-              {submitting ? 'Добавление...' : 'Добавить'}
-            </button>
           </form>
         </div>
       </div>
@@ -282,12 +464,19 @@ export default function Settings() {
                     <td className="camera-url-cell">{camera.url}</td>
                     <td className="camera-name-cell">{camera.name}</td>
                     <td className="camera-action-cell">
-                      <button 
+                      <button
                         className="btn-delete-camera"
                         onClick={() => handleDeleteCamera(camera.id)}
                         title="Удалить камеру"
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
                           <polyline points="3 6 5 6 21 6"></polyline>
                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                           <line x1="10" y1="11" x2="10" y2="17"></line>
@@ -299,7 +488,9 @@ export default function Settings() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="3" className="no-data">Камер не найдено</td>
+                  <td colSpan="3" className="no-data">
+                    Камер не найдено
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -313,21 +504,34 @@ export default function Settings() {
         {/* Growth norms block */}
         <div className="settings-block">
           <div className="file-upload-container">
-            <input 
-              type="file" 
+            <input
+              type="file"
               id="growth-file"
               onChange={handleUploadGrowthFile}
               className="file-input"
               accept=".xlsx,.xls,.csv"
             />
             <label htmlFor="growth-file" className="file-label">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '8px' }}>
-                <path d="M11.6667 1.96232V3.99992C11.6667 4.93334 11.6667 5.40005 11.8483 5.75657C12.0081 6.07017 12.2631 6.32514 12.5767 6.48493C12.9332 6.66658 13.3999 6.66658 14.3333 6.66658H17.0331M11.6667 1.96232C11.4522 1.87692 11.2307 1.80938 11.0044 1.76055C10.5699 1.66675 10.1104 1.66675 9.19137 1.66675C6.84135 1.66675 5.66634 1.66675 4.77504 2.12089C3.99103 2.52036 3.35361 3.15778 2.95414 3.94179C2.5 4.83309 2.5 5.99986 2.5 8.33341V11.6667C2.5 14.0003 2.5 15.1671 2.95414 16.0584C3.35361 16.8424 3.99103 17.4798 4.77504 17.8793C5.66634 18.3334 6.83311 18.3334 9.16667 18.3334H10.8333C13.1669 18.3334 14.3337 18.3334 15.225 17.8793C16.009 17.4798 16.6464 16.8424 17.0459 16.0584C17.5 15.1671 17.5 14.0003 17.5 11.6667V9.73298C17.5 8.60517 17.5 8.04126 17.3614 7.51741C17.2833 7.22213 17.1731 6.93686 17.0331 6.66658M11.6667 1.96232C11.8176 2.02244 11.9652 2.0914 12.1084 2.16894C12.4994 2.38053 12.846 2.67758 13.5391 3.2717L15.1719 4.67127C16.0282 5.40524 16.4564 5.77223 16.7639 6.21838C16.8631 6.36225 16.953 6.51196 17.0331 6.66658" stroke="#17672F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ marginRight: '8px' }}
+              >
+                <path
+                  d="M11.6667 1.96232V3.99992C11.6667 4.93334 11.6667 5.40005 11.8483 5.75657C12.0081 6.07017 12.2631 6.32514 12.5767 6.48493C12.9332 6.66658 13.3999 6.66658 14.3333 6.66658H17.0331M11.6667 1.96232C11.4522 1.87692 11.2307 1.80938 11.0044 1.76055C10.5699 1.66675 10.1104 1.66675 9.19137 1.66675C6.84135 1.66675 5.66634 1.66675 4.77504 2.12089C3.99103 2.52036 3.35361 3.15778 2.95414 3.94179C2.5 4.83309 2.5 5.99986 2.5 8.33341V11.6667C2.5 14.0003 2.5 15.1671 2.95414 16.0584C3.35361 16.8424 3.99103 17.4798 4.77504 17.8793C5.66634 18.3334 6.83311 18.3334 9.16667 18.3334H10.8333C13.1669 18.3334 14.3337 18.3334 15.225 17.8793C16.009 17.4798 16.6464 16.8424 17.0459 16.0584C17.5 15.1671 17.5 14.0003 17.5 11.6667V9.73298C17.5 8.60517 17.5 8.04126 17.3614 7.51741C17.2833 7.22213 17.1731 6.93686 17.0331 6.66658M11.6667 1.96232C11.8176 2.02244 11.9652 2.0914 12.1084 2.16894C12.4994 2.38053 12.846 2.67758 13.5391 3.2717L15.1719 4.67127C16.0282 5.40524 16.4564 5.77223 16.7639 6.21838C16.8631 6.36225 16.953 6.51196 17.0331 6.66658"
+                  stroke="#17672F"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
               Файл с нормами развития
             </label>
             <button className="btn btn-primary" style={{ maxWidth: '150px' }}>
-              Вгрузить
+              Выгрузить
             </button>
             <button className="btn btn-dark" style={{ maxWidth: '150px' }}>
               Заменить
@@ -336,8 +540,8 @@ export default function Settings() {
 
           <div className="growth-filters">
             <div className="form-group">
-              <select 
-                value={selectedNormFarm} 
+              <select
+                value={selectedNormFarm}
                 onChange={(e) => {
                   setSelectedNormFarm(e.target.value);
                   setSelectedNormFrame('');
@@ -355,8 +559,8 @@ export default function Settings() {
               </select>
             </div>
             <div className="form-group">
-              <select 
-                value={selectedNormFrame} 
+              <select
+                value={selectedNormFrame}
                 onChange={(e) => {
                   setSelectedNormFrame(e.target.value);
                   setSelectedNormControlPoint('');
@@ -366,45 +570,66 @@ export default function Settings() {
                 disabled={!selectedNormFarm}
               >
                 <option value="">Выберите корпус</option>
-                {selectedNormFarm && Array.from(new Set(controlPoints.filter(cp => cp.farm_id === parseInt(selectedNormFarm)).map(cp => cp.frame_name))).map((frame) => (
-                  <option key={frame} value={frame}>
-                    {frame}
-                  </option>
-                ))}
+                {selectedNormFarm &&
+                  Array.from(
+                    new Set(
+                      controlPoints
+                        .filter((cp) => cp.farm_id === parseInt(selectedNormFarm))
+                        .map((cp) => cp.frame_name)
+                    )
+                  ).map((frame) => (
+                    <option key={frame} value={frame}>
+                      {frame}
+                    </option>
+                  ))}
               </select>
             </div>
             <div className="form-group">
-              <select 
-                value={selectedNormControlPoint} 
+              <select
+                value={selectedNormControlPoint}
                 onChange={(e) => setSelectedNormControlPoint(e.target.value)}
                 className="filter-select"
                 title="Контрольная точка"
                 disabled={!selectedNormFrame}
               >
                 <option value="">Выберите точку контроля</option>
-                {selectedNormFrame && controlPoints.filter(cp => cp.farm_id === parseInt(selectedNormFarm) && cp.frame_name === selectedNormFrame).map((cp) => (
-                  <option key={cp.id} value={cp.id}>
-                    {cp.name}
-                  </option>
-                ))}
+                {selectedNormFrame &&
+                  controlPoints
+                    .filter(
+                      (cp) =>
+                        cp.farm_id === parseInt(selectedNormFarm) &&
+                        cp.frame_name === selectedNormFrame
+                    )
+                    .map((cp) => (
+                      <option key={cp.id} value={cp.id}>
+                        {cp.name}
+                      </option>
+                    ))}
               </select>
             </div>
-            
-            <div className="growth-filters-buttons">
-              <button 
-                className="btn btn-outlined"
-                onClick={() => setShowGrowthNormsModal(true)}
+
+            <div className="form-group growth-filters-ok">
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!selectedNormFarm || !selectedNormFrame || !selectedNormControlPoint}
               >
+                Ок
+              </button>
+            </div>
+
+            <div className="growth-filters-buttons">
+              <button className="btn btn-outlined" onClick={() => setShowGrowthNormsModal(true)}>
                 Внести данные
               </button>
-              <button 
-                className="btn btn-primary" 
+              <button
+                className="btn btn-primary"
                 disabled={!selectedNormFarm || !selectedNormFrame || !selectedNormControlPoint}
               >
                 Применить
               </button>
-              <button 
-                className="btn btn-dark" 
+              <button
+                className="btn btn-dark"
                 onClick={() => {
                   setSelectedNormFarm('');
                   setSelectedNormFrame('');
@@ -418,12 +643,8 @@ export default function Settings() {
         </div>
 
         <div className="settings-block-actions">
-          <button className="btn btn-primary">
-            Сохранить
-          </button>
-          <button className="btn btn-dark">
-            Отменить
-          </button>
+          <button className="btn btn-primary">Сохранить</button>
+          <button className="btn btn-dark">Отменить</button>
         </div>
       </div>
 
@@ -443,10 +664,18 @@ export default function Settings() {
                 <input type="number" placeholder="Количество" className="filter-input" />
               </div>
               <div className="modal-actions">
-                <button type="button" className="btn btn-primary" onClick={() => setShowDataOutputModal(false)}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setShowDataOutputModal(false)}
+                >
                   Сохранить
                 </button>
-                <button type="button" className="btn btn-dark" onClick={() => setShowDataOutputModal(false)}>
+                <button
+                  type="button"
+                  className="btn btn-dark"
+                  onClick={() => setShowDataOutputModal(false)}
+                >
                   Отменить
                 </button>
               </div>
@@ -514,21 +743,66 @@ export default function Settings() {
                 </div>
               </div>
               <div className="modal-actions">
-                <button 
+                <button
                   type="button"
-                  className="btn btn-primary" 
+                  className="btn btn-primary"
                   onClick={handleSaveGrowthNorms}
-                  disabled={!chickensQuantity || !growthDay || !initialAverageWeight || !landingDate || !closingDate}
+                  disabled={
+                    !chickensQuantity ||
+                    !growthDay ||
+                    !initialAverageWeight ||
+                    !landingDate ||
+                    !closingDate
+                  }
                 >
                   Сохранить
                 </button>
-                <button 
+                <button
                   type="button"
-                  className="btn btn-dark" 
+                  className="btn btn-dark"
                   onClick={() => {
                     setShowGrowthNormsModal(false);
                     handleResetGrowthForm();
                   }}
+                >
+                  Отменить
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add farm modal */}
+      {showAddFarmModal && (
+        <div className="modal-overlay" onClick={closeAddFarmModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Добавить ферму</h2>
+            <form className="modal-form" onSubmit={handleCreateFarm}>
+              <div className="form-group">
+                <input
+                  type="text"
+                  value={newFarmName}
+                  onChange={(e) => setNewFarmName(e.target.value)}
+                  placeholder="Название фермы"
+                  className="filter-input"
+                  autoFocus
+                  disabled={creatingFarm}
+                />
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={creatingFarm || !newFarmName.trim()}
+                >
+                  {creatingFarm ? 'Создание…' : 'Создать'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-dark"
+                  onClick={closeAddFarmModal}
+                  disabled={creatingFarm}
                 >
                   Отменить
                 </button>

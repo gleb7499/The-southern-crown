@@ -41,7 +41,7 @@ export default function Reports() {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
       });
 
       if (!response.ok) {
@@ -55,7 +55,7 @@ export default function Reports() {
         controlPointName: selectedControlPointName,
         reports: sortedReports,
         date: selectedDate,
-        weight: selectedWeight
+        weight: selectedWeight,
       });
     } catch (error) {
       console.error('Error loading chart data:', error);
@@ -83,11 +83,13 @@ export default function Reports() {
     <Layout>
       <h1>Отчеты</h1>
 
-      <FiltersForm onFilter={(filters) => {
-        console.log('Filters applied:', filters);
-        setSelectedControlPointId(filters.control_point_id);
-        setSelectedControlPointName(filters.control_point_name || '');
-      }} />
+      <FiltersForm
+        onFilter={(filters) => {
+          console.log('Filters applied:', filters);
+          setSelectedControlPointId(filters.control_point_id);
+          setSelectedControlPointName(filters.control_point_name || '');
+        }}
+      />
 
       <div className="chart-section">
         <h2 className="chart-section-title">Отклонение по точкам</h2>
@@ -95,8 +97,8 @@ export default function Reports() {
         <div className="chart-controls">
           <div className="control-group">
             <label>Средний вес</label>
-            <select 
-              value={selectedWeight} 
+            <select
+              value={selectedWeight}
               onChange={(e) => setSelectedWeight(e.target.value)}
               className="filter-select"
             >
@@ -109,9 +111,9 @@ export default function Reports() {
 
           <div className="control-group">
             <label>Дата</label>
-            <input 
-              type="date" 
-              value={selectedDate} 
+            <input
+              type="date"
+              value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="filter-input"
             />
@@ -134,30 +136,53 @@ export default function Reports() {
                 <line x1="60" y1="80" x2="800" y2="80" stroke="#e0e0e0" strokeWidth="1" />
 
                 {/* Метки на оси Y (граммы) */}
-                <text x="50" y="355" fontSize="12" textAnchor="end" fill="#616661">0г</text>
-                <text x="50" y="265" fontSize="12" textAnchor="end" fill="#616661">500г</text>
-                <text x="50" y="175" fontSize="12" textAnchor="end" fill="#616661">1000г</text>
-                <text x="50" y="85" fontSize="12" textAnchor="end" fill="#616661">1500г</text>
+                <text x="50" y="355" fontSize="12" textAnchor="end" fill="#616661">
+                  0г
+                </text>
+                <text x="50" y="265" fontSize="12" textAnchor="end" fill="#616661">
+                  500г
+                </text>
+                <text x="50" y="175" fontSize="12" textAnchor="end" fill="#616661">
+                  1000г
+                </text>
+                <text x="50" y="85" fontSize="12" textAnchor="end" fill="#616661">
+                  1500г
+                </text>
 
                 {/* Данные графика */}
 
                 {/* Линии между точками */}
                 {chartData.reports.map((report, index) => {
                   if (index === 0) return null;
-                  const x1 = 80 + ((index - 1) * (700 / Math.max(chartData.reports.length - 1, 1)));
+                  const x1 = 80 + (index - 1) * (700 / Math.max(chartData.reports.length - 1, 1));
                   const y1 = 350 - (chartData.reports[index - 1].gram / 1500) * 260;
-                  const x2 = 80 + (index * (700 / Math.max(chartData.reports.length - 1, 1)));
+                  const x2 = 80 + index * (700 / Math.max(chartData.reports.length - 1, 1));
                   const y2 = 350 - (report.gram / 1500) * 260;
                   return (
-                    <line key={`line-${index}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#17672F" strokeWidth="2" />
+                    <line
+                      key={`line-${index}`}
+                      x1={x1}
+                      y1={y1}
+                      x2={x2}
+                      y2={y2}
+                      stroke="#17672F"
+                      strokeWidth="2"
+                    />
                   );
                 })}
 
                 {/* Метки на оси X (дни) */}
                 {chartData.reports.map((report, index) => {
-                  const x = 80 + (index * (700 / Math.max(chartData.reports.length - 1, 1)));
+                  const x = 80 + index * (700 / Math.max(chartData.reports.length - 1, 1));
                   return (
-                    <text key={`label-${index}`} x={x} y="375" fontSize="12" textAnchor="middle" fill="#616661">
+                    <text
+                      key={`label-${index}`}
+                      x={x}
+                      y="375"
+                      fontSize="12"
+                      textAnchor="middle"
+                      fill="#616661"
+                    >
                       {index + 1}
                     </text>
                   );

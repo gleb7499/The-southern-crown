@@ -28,6 +28,7 @@ export const authAPI = {
 
 export const farmsAPI = {
   getFarms: () => api.get('/api/farms'),
+  createFarm: (data) => api.post('/api/farms', data),
   getBuildings: (farmId) => api.get('/api/buildings', { params: { farm_id: farmId } }),
 };
 
