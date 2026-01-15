@@ -34,8 +34,17 @@ body {
 
 .login-box {
   background-color: #fff;
-  padding: 40px;
-  width: 400px;
+  padding: clamp(24px, 5vw, 40px);
+  width: min(400px, 92vw);
+}
+
+/* На странице входа кнопка должна совпадать с шириной инпутов */
+.login-box .btn,
+.login-box .btn-primary,
+.login-box .btn-dark,
+.login-box .btn-outlined {
+  width: 100%;
+  max-width: 100%;
 }
 
 .login-box h1 {
@@ -828,6 +837,107 @@ body {
   box-shadow: 0 0 0 3px rgba(23, 103, 47, 0.1);
 }
 
+/* Dropdown calendar (Дата) */
+.date-dropdown {
+  position: relative;
+}
+
+.date-dropdown .filter-input {
+  cursor: pointer;
+}
+
+.date-dropdown__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 280px;
+  background: #ffffff;
+  border: 1px solid rgba(12, 13, 12, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+  padding: 14px 14px 12px;
+  z-index: 50;
+}
+
+.date-dropdown__header {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  align-items: center;
+  column-gap: 8px;
+  margin-bottom: 10px;
+}
+
+.date-dropdown__nav {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #0c0d0c;
+  font-size: 18px;
+  line-height: 1;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.date-dropdown__nav:hover {
+  background: rgba(12, 13, 12, 0.06);
+}
+
+.date-dropdown__month {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0c0d0c;
+}
+
+.date-dropdown__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.date-dropdown__weekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(12, 13, 12, 0.5);
+  padding: 4px 0;
+}
+
+.date-dropdown__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.date-dropdown__day {
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  color: rgba(12, 13, 12, 0.8);
+  cursor: pointer;
+}
+
+.date-dropdown__day:hover {
+  background: rgba(12, 13, 12, 0.06);
+}
+
+.date-dropdown__day.is-outside {
+  color: rgba(12, 13, 12, 0.28);
+}
+
+.date-dropdown__day.is-selected {
+  background: #17672f;
+  color: #ffffff;
+}
+
+.date-dropdown__day.is-selected:hover {
+  background: #125124;
+}
+
 .chart-container {
   border-radius: 8px;
   padding: 24px;
@@ -1305,6 +1415,25 @@ body {
   width: auto;
   max-width: 90vw;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #000000;
+  font-size: 22px;
+  line-height: 32px;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  opacity: 0.7;
 }
 
 .modal h2 {
@@ -1318,6 +1447,28 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.modal-field label {
+  font-size: 14px;
+  color: #000000;
+}
+
+.modal-grid-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.modal-grid-row--single {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .modal-form .form-group {
@@ -1340,6 +1491,10 @@ body {
   gap: 12px;
   justify-content: space-between;
   margin-top: 24px;
+}
+
+.modal-actions--center {
+  justify-content: center;
 }
 
 /* Адаптивные стили для узких экранов */

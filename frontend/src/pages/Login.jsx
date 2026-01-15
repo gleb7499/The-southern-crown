@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import Modal from '../components/Modal';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo.svg';
 
 export default function Login() {
   const [email, setEmail] = useState('');

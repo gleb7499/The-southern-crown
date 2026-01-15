@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import Loading from '../components/Loading';
 import FiltersForm from '../components/FiltersForm';
+import DateDropdownPicker from '../components/DateDropdownPicker';
 import { farmsAPI } from '../services/api';
 
 export default function Reports() {
@@ -110,12 +111,7 @@ export default function Reports() {
 
           <div className="control-group">
             <label>Дата</label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="filter-input"
-            />
+            <DateDropdownPicker value={selectedDate} onChange={setSelectedDate} />
           </div>
 
           <button className="btn btn-primary" onClick={handleGenerateChart}>

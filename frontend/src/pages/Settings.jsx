@@ -5,6 +5,24 @@ import { farmsAPI, controlPointsAPI, camerasAPI } from '../services/api';
 
 const ADD_FARM_OPTION_VALUE = '__add_farm__';
 
+function LabeledInput({ id, label, value, onChange, placeholder, type = 'text', inputMode, step }) {
+  return (
+    <div className="modal-field">
+      <label htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="filter-input"
+        inputMode={inputMode}
+        step={step}
+      />
+    </div>
+  );
+}
+
 export default function Settings() {
   const [farms, setFarms] = useState([]);
   const [controlPoints, setControlPoints] = useState([]);
@@ -223,6 +241,11 @@ export default function Settings() {
     setClosingDate('');
   };
 
+  const closeGrowthNormsModal = () => {
+    setShowGrowthNormsModal(false);
+    handleResetGrowthForm();
+  };
+
   const handleSaveGrowthNorms = async () => {
     if (
       !selectedNormFarm ||
@@ -240,6 +263,7 @@ export default function Settings() {
     try {
       alert('Нормы развития сохранены (функция в разработке)');
       handleResetGrowthForm();
+      setShowGrowthNormsModal(false);
     } catch (error) {
       console.error('Error saving growth norms:', error);
       alert('Ошибка при сохранении норм развития');
@@ -686,63 +710,72 @@ export default function Settings() {
 
       {/* Growth norms form modal */}
       {showGrowthNormsModal && (
-        <div className="modal-overlay" onClick={() => setShowGrowthNormsModal(false)}>
+        <div className="modal-overlay" onClick={closeGrowthNormsModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="modal-close"
+              aria-label="Закрыть"
+              onClick={closeGrowthNormsModal}
+            >
+              ×
+            </button>
             <h2>Данные нового выводка</h2>
             <form className="modal-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <input
-                    type="number"
-                    value={chickensQuantity}
-                    onChange={(e) => setChickensQuantity(e.target.value)}
-                    placeholder="Количество особей"
-                    className="filter-input"
-                  />
-                </div>
-                <div className="form-group">
-                  <input
-                    type="number"
-                    value={growthDay}
-                    onChange={(e) => setGrowthDay(e.target.value)}
-                    placeholder="День развития"
-                    className="filter-input"
-                  />
-                </div>
+              <div className="modal-grid-row">
+                <LabeledInput
+                  id="brood-chickens-qty"
+                  label="Количество особей"
+                  value={chickensQuantity}
+                  onChange={(e) => setChickensQuantity(e.target.value)}
+                  placeholder="Средний вес"
+                  type="number"
+                  inputMode="numeric"
+                />
+                <LabeledInput
+                  id="brood-growth-day"
+                  label="День развития"
+                  value={growthDay}
+                  onChange={(e) => setGrowthDay(e.target.value)}
+                  placeholder="Название корпуса"
+                  type="number"
+                  inputMode="numeric"
+                />
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={initialAverageWeight}
-                    onChange={(e) => setInitialAverageWeight(e.target.value)}
-                    placeholder="Начальный средний вес (г)"
-                    className="filter-input"
-                  />
-                </div>
+
+              <div className="modal-grid-row modal-grid-row--single">
+                <LabeledInput
+                  id="brood-initial-avg-weight"
+                  label="Начальный средний вес"
+                  value={initialAverageWeight}
+                  onChange={(e) => setInitialAverageWeight(e.target.value)}
+                  placeholder="Название точки контроля"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                />
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <input
-                    type="date"
-                    value={landingDate}
-                    onChange={(e) => setLandingDate(e.target.value)}
-                    placeholder="Дата посадки"
-                    className="filter-input"
-                  />
-                </div>
-                <div className="form-group">
-                  <input
-                    type="date"
-                    value={closingDate}
-                    onChange={(e) => setClosingDate(e.target.value)}
-                    placeholder="Дата закрытия"
-                    className="filter-input"
-                  />
-                </div>
+
+              <div className="modal-grid-row">
+                <LabeledInput
+                  id="brood-closing-date"
+                  label="Дата закрытия"
+                  value={closingDate}
+                  onChange={(e) => setClosingDate(e.target.value)}
+                  placeholder="Название точки контроля"
+                  type="text"
+                />
+                <LabeledInput
+                  id="brood-landing-date"
+                  label="Дата посадки"
+                  value={landingDate}
+                  onChange={(e) => setLandingDate(e.target.value)}
+                  placeholder="Название точки контроля"
+                  type="text"
+                />
               </div>
-              <div className="modal-actions">
+
+              <div className="modal-actions modal-actions--center">
                 <button
                   type="button"
                   className="btn btn-primary"
@@ -756,16 +789,6 @@ export default function Settings() {
                   }
                 >
                   Сохранить
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-dark"
-                  onClick={() => {
-                    setShowGrowthNormsModal(false);
-                    handleResetGrowthForm();
-                  }}
-                >
-                  Отменить
                 </button>
               </div>
             </form>

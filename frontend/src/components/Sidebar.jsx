@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '../services/api';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo.svg';
 
 export default function Sidebar() {
   const navigate = useNavigate();
