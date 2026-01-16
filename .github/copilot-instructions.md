@@ -103,7 +103,7 @@ docker compose up --build
 
 - Backend: <http://localhost:8000> (API документация в `/docs`)
 - Frontend: <http://localhost:5173>
-- Вход по умолчанию: `admin@example.com` / `admin123`
+- Вход по умолчанию: `admin@example.com` / пароль из `ADMIN_PASSWORD` (в `backend/.env`)
 
 ### Только Backend (Python)
 
@@ -126,7 +126,7 @@ npm run dev
 
 [backend/app/init_db.py](backend/app/init_db.py) создаёт seed данные:
 
-- Администратор (email: <admin@example.com>, password: admin123)
+- Администратор (email: <admin@example.com>, password: берётся из `ADMIN_PASSWORD` в `backend/.env`)
 - 3 фермы → каждая с 3 frame_name ("Корпус 1", "Корпус 2", "Корпус 3")
 - Каждый frame имеет 2 точки контроля → каждая с 2 камерами, growth_rate и report
 - **Важно**: Камеры создаются с обязательным `farm_id` (новое требование)

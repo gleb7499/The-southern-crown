@@ -8,14 +8,49 @@ const api = axios.create({
   },
 });
 
+// Separate client without response interceptor to avoid infinite loops.
+const refreshClient = axios.create({
+  baseURL: '',
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+let refreshPromise = null;
+
+const getRefreshPromise = () => {
+  if (!refreshPromise) {
+    refreshPromise = refreshClient.post('/auth/refresh').finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+};
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     // Не редиректим на /login при ошибке авторизации на странице логина
     const isLoginRequest = error.config?.url?.includes('/auth/login');
-    if (error.response?.status === 401 && !isLoginRequest) {
+    const isRefreshRequest = error.config?.url?.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !isLoginRequest && !isRefreshRequest) {
+      const originalRequest = error.config;
+      if (!originalRequest?._retry) {
+        originalRequest._retry = true;
+        try {
+          await getRefreshPromise();
+          return api(originalRequest);
+        } catch (refreshError) {
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        }
+      }
+
       window.location.href = '/login';
     }
+
     return Promise.reject(error);
   }
 );

@@ -16,6 +16,7 @@ from app.models.camera import Camera
 from app.models.control_point import ControlPoint
 from app.models.farm import Farm
 from app.models.growth_rate import GrowthRate
+from app.models.refresh_token import RefreshToken
 from app.models.report import Report
 from app.models.user import User
 
@@ -37,7 +38,15 @@ def test_database_structure():
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = cursor.fetchall()
 
-    expected_tables = ["user", "farm", "control_point", "growth_rate", "report", "camera"]
+    expected_tables = [
+        "user",
+        "farm",
+        "control_point",
+        "growth_rate",
+        "report",
+        "camera",
+        "refresh_token",
+    ]
     found_tables = [table[0] for table in tables]
 
     for table in expected_tables:
@@ -80,11 +89,13 @@ def test_relationships():
 
     # Проверяем атрибуты relationships
     checks = [
+        ("User", User, ["refresh_tokens"]),
         ("Farm", Farm, ["control_points", "growth_rates", "reports"]),
         ("ControlPoint", ControlPoint, ["farm", "cameras", "growth_rates", "reports"]),
         ("Camera", Camera, ["control_point"]),
         ("GrowthRate", GrowthRate, ["farm", "control_point"]),
         ("Report", Report, ["farm", "control_point"]),
+        ("RefreshToken", RefreshToken, ["user"]),
     ]
 
     for model_name, model_class, expected_rels in checks:

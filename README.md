@@ -38,6 +38,8 @@
 ```bash
 git clone https://github.com/gleb7499/The-southern-crown.git
 cd The-southern-crown
+cp backend/.env.example backend/.env
+# Edit backend/.env and set SECRET_KEY, ADMIN_PASSWORD
 ```
 
 2. Запустите проект через Docker Compose:
@@ -46,7 +48,7 @@ cd The-southern-crown
 docker compose up --build
 ```
 
-3. Откройте браузер:
+1. Откройте браузер:
 
 - Фронтенд: <http://localhost:5173>
 - Backend API: <http://localhost:8000>
@@ -55,7 +57,7 @@ docker compose up --build
 ### Данные для входа
 
 **Email:** <admin@example.com>  
-**Пароль:** admin123
+**Пароль:** admin123 (или ваш ADMIN_PASSWORD из .env)
 
 ## Структура проекта
 

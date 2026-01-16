@@ -80,9 +80,18 @@ def test_all_schemas():
         (
             "CameraCreate",
             CameraCreate,
-            {"name": "Камера 1", "url": "http://example.com/stream/1", "control_point_id": 1},
+            {
+                "name": "Камера 1",
+                "url": "http://example.com/stream/1",
+                "farm_id": 1,
+                "control_point_id": 1,
+            },
         ),
-        ("LoginRequest", LoginRequest, {"email": "admin@example.com", "password": "admin123"}),
+        (
+            "LoginRequest",
+            LoginRequest,
+            {"email": "admin@example.com", "password": "dummy-password"},
+        ),
         ("UserResponse", UserResponse, {"id": 1, "email": "admin@example.com", "is_admin": True}),
     ]
 

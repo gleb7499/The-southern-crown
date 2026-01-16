@@ -6,6 +6,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/data:/app/data
+    env_file:
+      - ./backend/.env
     environment:
       - DATABASE_URL=sqlite:///./data/southern_crown.db
       - ENV=development

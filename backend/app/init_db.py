@@ -1,29 +1,38 @@
 from datetime import date, timedelta
 from pathlib import Path
 
+from app.core.config import settings
 from app.core.database import Base, SessionLocal, engine
 from app.core.security import get_password_hash
 from app.models.camera import Camera
 from app.models.control_point import ControlPoint
 from app.models.farm import Farm
 from app.models.growth_rate import GrowthRate
+from app.models.refresh_token import RefreshToken
 from app.models.report import Report
 from app.models.user import User
 
 
 def init_db():
-    # Ensure data directory exists and is writable
-    data_dir = Path("/app/data")
-    data_dir.mkdir(parents=True, exist_ok=True)
+    # Extract DB file path from DATABASE_URL
+    # Format: sqlite:///path/to/file.db -> path/to/file.db
+    db_url = settings.DATABASE_URL
+    if db_url.startswith("sqlite:///"):
+        db_file_path = db_url.replace("sqlite:///", "")
+        db_file = Path(db_file_path)
 
-    # Check if database file exists and remove it for clean start
-    db_file = data_dir / "southern_crown.db"
-    if db_file.exists():
-        try:
-            db_file.unlink()
-            print("Removed old database file")
-        except Exception as e:
-            print(f"Warning: Could not remove old database: {e}")
+        # Ensure parent directory exists
+        db_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Remove old database only when explicitly requested.
+        if settings.RESET_DB_ON_START and db_file.exists():
+            try:
+                db_file.unlink()
+                print("Removed old database file")
+            except Exception as e:
+                print(f"Warning: Could not remove old database: {e}")
+    else:
+        print(f"Using DATABASE_URL: {db_url}")
 
     # Create tables
     Base.metadata.create_all(bind=engine)
@@ -32,16 +41,16 @@ def init_db():
 
     try:
         # Check if admin user exists
-        admin = db.query(User).filter(User.email == "admin@example.com").first()
+        admin = db.query(User).filter(User.email == settings.ADMIN_EMAIL).first()
         if not admin:
             admin = User(
-                email="admin@example.com",
-                hashed_password=get_password_hash("admin123"),
+                email=settings.ADMIN_EMAIL,
+                hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
                 is_active=True,
                 is_admin=True,
             )
             db.add(admin)
-            print("Created admin user: admin@example.com / admin123")
+            print(f"Created admin user: {settings.ADMIN_EMAIL}")
 
         # Create sample farms
         if db.query(Farm).count() == 0:

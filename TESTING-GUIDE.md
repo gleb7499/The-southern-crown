@@ -88,13 +88,13 @@ python -m app.init_db
 **Что происходит**:
 
 - Создаются все таблицы
-- Создается admin пользователь (<admin@example.com> / admin123)
+- Создается admin пользователь (<admin@example.com> / пароль из `ADMIN_PASSWORD`)
 - Создаются 3 фермы с точками контроля, камерами, growth_rates, reports
 
 **Ожидаемый результат**:
 
 ```
-Created admin user: admin@example.com / admin123
+Created admin user: admin@example.com
 Created sample farms, control points, cameras, growth rates, and reports
 Database initialized successfully
 ```
@@ -166,7 +166,7 @@ INFO:     Started server process
      ```json
      {
        "email": "admin@example.com",
-       "password": "admin123"
+      "password": "<ADMIN_PASSWORD>"
      }
      ```
 
@@ -194,7 +194,7 @@ INFO:     Started server process
 $response = Invoke-WebRequest -Uri "http://localhost:8000/api/auth/login" `
   -Method POST `
   -ContentType "application/json" `
-  -Body '{"email":"admin@example.com","password":"admin123"}' `
+  -Body '{"email":"admin@example.com","password":"<ADMIN_PASSWORD>"}' `
   -SessionVariable session
 
 # Получить фермы
