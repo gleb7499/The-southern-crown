@@ -867,6 +867,14 @@ body {
   margin-bottom: 10px;
 }
 
+.date-dropdown__title {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .date-dropdown__nav {
   width: 28px;
   height: 28px;
@@ -888,6 +896,59 @@ body {
   font-size: 16px;
   font-weight: 700;
   color: #0c0d0c;
+}
+
+.date-dropdown__year {
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0c0d0c;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+.date-dropdown__year:hover {
+  background: rgba(12, 13, 12, 0.06);
+}
+
+.date-dropdown__year-editor {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.date-dropdown__year-input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(12, 13, 12, 0.18);
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.date-dropdown__year-input:focus {
+  outline: none;
+  border-color: #17672f;
+  box-shadow: 0 0 0 3px rgba(23, 103, 47, 0.1);
+}
+
+.date-dropdown__year-apply,
+.date-dropdown__year-cancel {
+  height: 36px;
+  padding: 0 10px;
+  border: none;
+  background: rgba(12, 13, 12, 0.06);
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.date-dropdown__year-apply:hover,
+.date-dropdown__year-cancel:hover {
+  background: rgba(12, 13, 12, 0.1);
 }
 
 .date-dropdown__weekdays {

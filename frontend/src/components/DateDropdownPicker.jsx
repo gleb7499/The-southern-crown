@@ -45,6 +45,11 @@ function toMondayFirstIndex(jsDayIndex) {
   return (jsDayIndex + 6) % 7;
 }
 
+function clampInt(value, min, max) {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.trunc(value)));
+}
+
 export default function DateDropdownPicker({
   value,
   onChange,
@@ -60,13 +65,18 @@ export default function DateDropdownPicker({
   const initialMonth = parsedValue ? parsedValue.getMonth() : new Date().getMonth();
   const initialYear = parsedValue ? parsedValue.getFullYear() : new Date().getFullYear();
 
-  const [viewMonth, setViewMonth] = useState(initialMonth);
-  const [viewYear, setViewYear] = useState(initialYear);
+  const [{ month: viewMonth, year: viewYear }, setView] = useState(() => ({
+    month: initialMonth,
+    year: initialYear,
+  }));
+
+  const [isYearEditOpen, setIsYearEditOpen] = useState(false);
+  const [yearDraft, setYearDraft] = useState(String(initialYear));
 
   useEffect(() => {
     if (!parsedValue) return;
-    setViewMonth(parsedValue.getMonth());
-    setViewYear(parsedValue.getFullYear());
+    setView({ month: parsedValue.getMonth(), year: parsedValue.getFullYear() });
+    setIsYearEditOpen(false);
   }, [parsedValue]);
 
   useEffect(() => {
@@ -143,23 +153,40 @@ export default function DateDropdownPicker({
   }, [parsedValue]);
 
   const goPrevMonth = () => {
-    setViewMonth((m) => {
-      if (m === 0) {
-        setViewYear((y) => y - 1);
-        return 11;
-      }
-      return m - 1;
+    setIsYearEditOpen(false);
+    setView(({ month, year }) => {
+      if (month === 0) return { month: 11, year: year - 1 };
+      return { month: month - 1, year };
     });
   };
 
   const goNextMonth = () => {
-    setViewMonth((m) => {
-      if (m === 11) {
-        setViewYear((y) => y + 1);
-        return 0;
-      }
-      return m + 1;
+    setIsYearEditOpen(false);
+    setView(({ month, year }) => {
+      if (month === 11) return { month: 0, year: year + 1 };
+      return { month: month + 1, year };
     });
+  };
+
+  const openYearEditor = () => {
+    setYearDraft(String(viewYear));
+    setIsYearEditOpen(true);
+  };
+
+  const closeYearEditor = () => {
+    setIsYearEditOpen(false);
+    setYearDraft(String(viewYear));
+  };
+
+  const applyYearDraft = () => {
+    const parsed = Number(yearDraft);
+    if (!Number.isFinite(parsed)) {
+      closeYearEditor();
+      return;
+    }
+    const nextYear = clampInt(parsed, 1900, 2100);
+    setView(({ month }) => ({ month, year: nextYear }));
+    setIsYearEditOpen(false);
   };
 
   const handlePick = (date) => {
@@ -184,7 +211,10 @@ export default function DateDropdownPicker({
         value={displayedValue}
         placeholder={placeholder}
         readOnly
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={() => {
+          setIsOpen((v) => !v);
+          setIsYearEditOpen(false);
+        }}
         aria-label="Дата"
       />
 
@@ -201,11 +231,21 @@ export default function DateDropdownPicker({
             </button>
 
             <div
-              className="date-dropdown__month"
+              className="date-dropdown__title"
               aria-label={`${MONTH_NAMES_RU[viewMonth]} ${viewYear}`}
-              title={`${MONTH_NAMES_RU[viewMonth]} ${viewYear}`}
             >
-              {MONTH_NAMES_RU[viewMonth]}
+              <span className="date-dropdown__month" title={MONTH_NAMES_RU[viewMonth]}>
+                {MONTH_NAMES_RU[viewMonth]}
+              </span>
+              <button
+                type="button"
+                className="date-dropdown__year"
+                onClick={() => (isYearEditOpen ? closeYearEditor() : openYearEditor())}
+                aria-label="Выбрать год"
+                title="Нажмите, чтобы указать год"
+              >
+                {viewYear}
+              </button>
             </div>
 
             <button
@@ -217,6 +257,42 @@ export default function DateDropdownPicker({
               ›
             </button>
           </div>
+
+          {isYearEditOpen && (
+            <div className="date-dropdown__year-editor" aria-label="Ввод года">
+              <input
+                className="date-dropdown__year-input"
+                type="number"
+                inputMode="numeric"
+                min={1900}
+                max={2100}
+                step={1}
+                value={yearDraft}
+                onChange={(e) => setYearDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') applyYearDraft();
+                  if (e.key === 'Escape') closeYearEditor();
+                }}
+                aria-label="Год"
+              />
+              <button
+                type="button"
+                className="date-dropdown__year-apply"
+                onClick={applyYearDraft}
+                aria-label="Применить год"
+              >
+                OK
+              </button>
+              <button
+                type="button"
+                className="date-dropdown__year-cancel"
+                onClick={closeYearEditor}
+                aria-label="Отменить ввод года"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           <div className="date-dropdown__weekdays">
             {WEEKDAY_NAMES_RU.map((name) => (
