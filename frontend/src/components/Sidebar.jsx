@@ -100,7 +100,7 @@ export default function Sidebar() {
       ),
     },
     {
-      label: 'Настройка',
+      label: 'Настройки',
       path: '/dashboard/settings',
       inactiveIcon: (
         <svg

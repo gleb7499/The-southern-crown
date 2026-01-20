@@ -268,7 +268,6 @@ export default function Reports() {
 
         <div className="chart-controls">
           <div className="control-group">
-            <label>Показатель</label>
             <select
               value={selectedMetricKey}
               onChange={(e) => setSelectedMetricKey(e.target.value)}
@@ -302,8 +301,11 @@ export default function Reports() {
           )}
 
           <div className="control-group">
-            <label>Дата</label>
-            <DateDropdownPicker value={selectedDate} onChange={setSelectedDate} />
+            <DateDropdownPicker
+              value={selectedDate}
+              onChange={setSelectedDate}
+              placeholder="Дата"
+            />
           </div>
 
           <button className="btn btn-primary" onClick={handleGenerateChart}>

@@ -8,22 +8,40 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+
+  const isEmailWithDomain = (value) => {
+    const normalized = String(value || '').trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(normalized);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const normalizedEmail = email.trim();
+    const normalizedPassword = password;
+
     // Basic validation
-    if (!email || !password) {
+    if (!normalizedEmail || !normalizedPassword) {
+      setErrorMessage('Пожалуйста, заполните email и пароль.');
+      setShowErrorModal(true);
+      return;
+    }
+
+    // Требование клиента: показываем конкретную ошибку для email без домена.
+    if (!isEmailWithDomain(normalizedEmail)) {
+      setErrorMessage('Неверный формат почты: отсутствует домен.');
       setShowErrorModal(true);
       return;
     }
 
     try {
-      await authAPI.login(email, password);
+      await authAPI.login(normalizedEmail, normalizedPassword);
       navigate('/dashboard/general');
     } catch (error) {
       console.error('Login error:', error);
+      setErrorMessage('Данные для авторизации неверные. Попробуйте еще раз.');
       setShowErrorModal(true);
     }
   };
@@ -63,11 +81,23 @@ export default function Login() {
         </form>
       </div>
 
-      <Modal isOpen={showErrorModal} onClose={() => setShowErrorModal(false)}>
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => {
+          setShowErrorModal(false);
+          setErrorMessage('');
+        }}
+      >
         <h2>Ошибка</h2>
-        <p>Данные для авторизации не верные. Попробуйте еще раз.</p>
+        <p>{errorMessage || 'Данные для авторизации неверные. Попробуйте еще раз.'}</p>
         <div className="modal-actions">
-          <button className="btn btn-primary" onClick={() => setShowErrorModal(false)}>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setShowErrorModal(false);
+              setErrorMessage('');
+            }}
+          >
             Хорошо
           </button>
         </div>

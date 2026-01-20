@@ -424,7 +424,7 @@ export default function Settings() {
               </div>
 
               <div className="form-group" style={{ flex: 2 }}>
-                <div className="add-camera-hint">Название точки</div>
+                <div className="add-camera-hint">Название камеры</div>
               </div>
 
               <div className="form-group" style={{ flex: 1 }} />
@@ -448,7 +448,7 @@ export default function Settings() {
                   type="text"
                   value={cameraName}
                   onChange={(e) => setCameraName(e.target.value)}
-                  placeholder="Название точки"
+                  placeholder="Название камеры"
                   required
                   className="filter-input"
                   disabled={!selectedCameraControlPoint}
@@ -472,6 +472,16 @@ export default function Settings() {
                   {submitting ? 'Добавление...' : 'Вывести'}
                 </button>
               </div>
+            </div>
+
+            <div className="form-row" style={{ marginTop: '16px' }}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={submitting || !selectedCameraControlPoint || !cameraName || !cameraUrl}
+              >
+                {submitting ? 'Добавление...' : 'Добавить'}
+              </button>
             </div>
           </form>
         </div>
