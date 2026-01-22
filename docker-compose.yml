@@ -23,7 +23,7 @@ services:
     build:
       context: ./backend
     ports:
-      - "8050:8000"
+      - "8000:8000"
     volumes:
       - ./backend/data:/app/data
     environment:
@@ -31,7 +31,7 @@ services:
       - ENV=development
       - DEBUG=true
       - TZ=Europe/Moscow
-      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+      - ALLOWED_ORIGINS=http://localhost:5173
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - VIDEO_RECORDING_SCHEDULE=${VIDEO_RECORDING_SCHEDULE:-08:00,14:00}
@@ -55,7 +55,7 @@ services:
       context: ./frontend
       target: development
     ports:
-      - "5175:5173"
+      - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
