@@ -1,7 +1,8 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
@@ -15,9 +16,9 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[Camera])
-def get_cameras(
-    control_point_id: int = None,
-    db: Session = Depends(get_db),
+async def get_cameras(
+    control_point_id: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -25,18 +26,19 @@ def get_cameras(
 
     - **control_point_id**: ID точки контроля для фильтрации (опционально)
     """
-    query = db.query(CameraModel)
+    query = select(CameraModel)
 
     if control_point_id:
         query = query.filter(CameraModel.control_point_id == control_point_id)
 
-    return query.all()
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 @router.post("/", response_model=Camera, status_code=201)
-def create_camera(
+async def create_camera(
     camera: CameraCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -50,14 +52,16 @@ def create_camera(
     Проверяется существование фермы и точки контроля, а также их соответствие.
     """
     # Проверка существования фермы
-    farm = db.query(Farm).filter(Farm.id == camera.farm_id).first()
+    farm_result = await db.execute(select(Farm).filter(Farm.id == camera.farm_id))
+    farm = farm_result.scalar_one_or_none()
     if not farm:
         raise HTTPException(status_code=404, detail=f"Farm with id {camera.farm_id} not found")
 
     # Проверка существования точки контроля
-    control_point = (
-        db.query(ControlPoint).filter(ControlPoint.id == camera.control_point_id).first()
+    cp_result = await db.execute(
+        select(ControlPoint).filter(ControlPoint.id == camera.control_point_id)
     )
+    control_point = cp_result.scalar_one_or_none()
     if not control_point:
         raise HTTPException(
             status_code=404,
@@ -76,26 +80,29 @@ def create_camera(
 
     db_camera = CameraModel(**camera.dict())
     db.add(db_camera)
-    db.commit()
-    db.refresh(db_camera)
+    await db.commit()
+    await db.refresh(db_camera)
     return db_camera
 
 
 @router.delete("/{camera_id}")
-def delete_camera(
-    camera_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+async def delete_camera(
+    camera_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Удалить камеру по ID.
 
     - **camera_id**: ID камеры для удаления
     """
-    camera = db.query(CameraModel).filter(CameraModel.id == camera_id).first()
+    result = await db.execute(select(CameraModel).filter(CameraModel.id == camera_id))
+    camera = result.scalar_one_or_none()
 
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
 
-    db.delete(camera)
-    db.commit()
+    await db.delete(camera)
+    await db.commit()
 
     return {"message": "Camera deleted successfully"}

@@ -38,8 +38,6 @@
 ```bash
 git clone https://github.com/gleb7499/The-southern-crown.git
 cd The-southern-crown
-cp backend/.env.example backend/.env
-# Edit backend/.env and set SECRET_KEY, ADMIN_PASSWORD
 ```
 
 2. Запустите проект через Docker Compose:
@@ -48,7 +46,7 @@ cp backend/.env.example backend/.env
 docker compose up --build
 ```
 
-1. Откройте браузер:
+3. Откройте браузер:
 
 - Фронтенд: <http://localhost:5173>
 - Backend API: <http://localhost:8000>
@@ -57,7 +55,7 @@ docker compose up --build
 ### Данные для входа
 
 **Email:** <admin@example.com>  
-**Пароль:** admin123 (или ваш ADMIN_PASSWORD из .env)
+**Пароль:** admin123
 
 ## Структура проекта
 
@@ -125,9 +123,10 @@ The-southern-crown/
 
 ### 1. Авторизация
 
-- JWT токены в HttpOnly cookies
-- Автоматический редирект при 401
+- **JWT access токен** в HttpOnly cookies (срок жизни 24 часа)
+- Автоматический редирект на `/login` при истечении токена (401)
 - Модальное окно с ошибкой при неверных данных
+- Простая и надежная архитектура без refresh токенов
 
 ### 2. Раздел "Общее"
 
@@ -156,9 +155,11 @@ The-southern-crown/
 
 ### Аутентификация
 
-- `POST /auth/login` - вход в систему
-- `POST /auth/logout` - выход
-- `GET /auth/me` - текущий пользователь
+- `POST /auth/login` - вход в систему (возвращает JWT в httponly cookie)
+- `POST /auth/logout` - выход из системы (удаляет cookie)
+- `GET /auth/me` - получить данные текущего пользователя
+
+**Примечание:** Используется упрощенная архитектура с одним access_token (24 часа). Refresh token не используется.
 
 ### Фермы и корпуса
 
@@ -274,10 +275,12 @@ postgres:
 
 ## Безопасность
 
-- ✅ JWT токены в HttpOnly cookies
+- ✅ **JWT access_token** в HttpOnly cookies (24 часа)
+- ✅ Простая архитектура без refresh токенов
 - ✅ CORS настроен для локальной разработки
 - ✅ Пароли хешируются через bcrypt
-- ⚠️ Для продакшена: измените SECRET_KEY, настройте HTTPS, добавьте rate limiting
+- ✅ Rate limiting встроен (1000 req/min dev, 100 req/min prod)
+- ⚠️ Для продакшена: измените SECRET_KEY, настройте HTTPS
 
 ## Тестирование
 

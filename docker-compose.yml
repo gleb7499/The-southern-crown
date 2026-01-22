@@ -1,4 +1,24 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    # ports:
+    #   - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-southern_crown}
+    networks:
+      - app-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
@@ -6,22 +26,29 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/data:/app/data
-    env_file:
-      - ./backend/.env
     environment:
-      - DATABASE_URL=sqlite:///./data/southern_crown.db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-southern_crown}
       - ENV=development
       - DEBUG=true
-      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+      - TZ=Europe/Moscow
+      - ALLOWED_ORIGINS=http://localhost:5173
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - VIDEO_RECORDING_SCHEDULE=${VIDEO_RECORDING_SCHEDULE:-08:00,14:00}
+      - VIDEO_RECORDING_DURATION=${VIDEO_RECORDING_DURATION:-300}
+      - VIDEO_RECORDING_PATH=/app/data/recordings
     networks:
       - app-network
-    restart: unless-stopped
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD-SHELL", "python -c \"import requests; requests.get('http://localhost:8000/health', timeout=5)\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
   frontend:
     build:
@@ -43,6 +70,7 @@ services:
 
 volumes:
   backend-data:
+  postgres-data:
 
 networks:
   app-network:

@@ -1,56 +1,40 @@
-from pathlib import Path
-from typing import Any, List
+from typing import List
 
-from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     # Security
-    # IMPORTANT: secrets must come ONLY from environment (.env).
-    SECRET_KEY: str = Field(..., min_length=32)
-    ALGORITHM: str = Field(default="HS256")
+    # WARNING: Change SECRET_KEY in production! Set via environment variable.
+    # Generating random key here is only for development convenience.
+    SECRET_KEY: str = "CHANGE_THIS_TO_A_SECURE_SECRET_KEY_IN_PRODUCTION_AND_KEEP_IT_CONSISTENT"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
-    # Short-lived access token; renewed via refresh token.
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(..., ge=1, le=24 * 60)
-
-    # Long-lived refresh token; stored server-side (by jti) for rotation/revocation.
-    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(..., ge=1, le=365)
-
-    # Seed admin user (dev only; still configured via env to avoid hardcoding credentials)
-    ADMIN_EMAIL: str = Field(default="admin@example.com")
-    ADMIN_PASSWORD: str = Field(..., min_length=8)
-
-    # Dev/test helpers
-    RESET_DB_ON_START: bool = Field(default=False)
-
-    # Database - will be set to absolute path in validator
-    DATABASE_URL: str = Field(default="")
-
-    @model_validator(mode="after")
-    def resolve_database_url(self) -> "Settings":
-        """Resolve DATABASE_URL to absolute path for SQLite."""
-        if not self.DATABASE_URL or self.DATABASE_URL == "":
-            # Default: backend/data/southern_crown.db
-            app_dir = Path(__file__).parent.parent.parent  # backend/
-            db_path = app_dir / "data" / "southern_crown.db"
-            db_path.parent.mkdir(parents=True, exist_ok=True)
-            self.DATABASE_URL = f"sqlite:///{db_path}"
-        elif self.DATABASE_URL.startswith("sqlite:///./"):
-            # Relative path - convert to absolute
-            rel_path = self.DATABASE_URL.replace("sqlite:///./", "")
-            app_dir = Path(__file__).parent.parent.parent
-            abs_path = (app_dir / rel_path).resolve()
-            abs_path.parent.mkdir(parents=True, exist_ok=True)
-            self.DATABASE_URL = f"sqlite:///{abs_path}"
-        return self
+    # Database
+    # Для async SQLAlchemy используем postgresql+asyncpg
+    # Формат: postgresql://user:password@host:port/dbname (будет автоматически преобразован в postgresql+asyncpg://)
+    DATABASE_URL: str = "postgresql://postgres:postgres@postgres:5432/southern_crown"
 
     # CORS
-    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+    ALLOWED_ORIGINS: str = "*"
 
     # Environment
     ENV: str = "development"
     DEBUG: bool = True
+
+    # Admin User Settings
+    ADMIN_EMAIL: str = "admin@example.com"
+    ADMIN_PASSWORD: str = "admin123"
+
+    # Video Recording Settings
+    # Время запуска записей в формате HH:MM, разделенные запятыми
+    # Например: "08:00,14:00" для 2 раз в день или "08:00,14:00,20:00" для 3 раз
+    VIDEO_RECORDING_SCHEDULE: str = "18:10,14:00"
+    # Длительность записи в секундах
+    VIDEO_RECORDING_DURATION: int = 300  # 5 минут по умолчанию
+    # Путь для сохранения записей
+    VIDEO_RECORDING_PATH: str = "./data/recordings"
 
     class Config:
         env_file = ".env"

@@ -2,7 +2,8 @@ import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
@@ -21,11 +22,11 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/", response_model=List[ControlPointWithDetails])
-def get_control_points(
+async def get_control_points(
     farm_ids: Optional[str] = None,
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -36,7 +37,7 @@ def get_control_points(
     - **limit**: Максимальное количество возвращаемых записей (пагинация)
     """
     query = (
-        db.query(ControlPointModel, Farm.name.label("farm_name"))
+        select(ControlPointModel, Farm.name.label("farm_name"))
         .select_from(ControlPointModel)
         .join(Farm, ControlPointModel.farm_id == Farm.id)
     )
@@ -44,14 +45,16 @@ def get_control_points(
     if farm_ids:
         try:
             farm_id_list = [int(x.strip()) for x in farm_ids.split(",") if x.strip()]
-            query = query.filter(Farm.id.in_(farm_id_list))
+            query = query.where(Farm.id.in_(farm_id_list))
             logger.info(f"Filtering by farm IDs: {farm_id_list}")
         except ValueError:
             logger.error(f"Invalid farm_ids format: {farm_ids}")
             raise HTTPException(status_code=400, detail="Invalid farm_ids format")
 
     # Apply pagination
-    results = query.offset(skip).limit(limit).all()
+    query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
+    results = result.all()
 
     control_points = []
     for cp, farm_name in results:
@@ -70,9 +73,9 @@ def get_control_points(
 
 
 @router.post("/", response_model=ControlPoint)
-def create_control_point(
+async def create_control_point(
     control_point: ControlPointCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -81,24 +84,25 @@ def create_control_point(
     Требуется существующий farm_id в базе данных.
     """
     # Verify farm exists
-    farm = db.query(Farm).filter(Farm.id == control_point.farm_id).first()
+    farm_result = await db.execute(select(Farm).filter(Farm.id == control_point.farm_id))
+    farm = farm_result.scalar_one_or_none()
     if not farm:
         logger.error(f"Farm not found: {control_point.farm_id}")
         raise HTTPException(status_code=404, detail="Farm not found")
 
     db_control_point = ControlPointModel(**control_point.dict())
     db.add(db_control_point)
-    db.commit()
-    db.refresh(db_control_point)
+    await db.commit()
+    await db.refresh(db_control_point)
 
     logger.info(f"Created control point: {db_control_point.id} - {db_control_point.name}")
     return db_control_point
 
 
 @router.post("/full", response_model=ControlPoint)
-def create_control_point_full(
+async def create_control_point_full(
     data: ControlPointCreateFull,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -112,11 +116,12 @@ def create_control_point_full(
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
     # Find or create farm
-    farm = db.query(Farm).filter(Farm.name == data.farm_name).first()
+    farm_result = await db.execute(select(Farm).filter(Farm.name == data.farm_name))
+    farm = farm_result.scalar_one_or_none()
     if not farm:
         farm = Farm(name=data.farm_name)
         db.add(farm)
-        db.flush()
+        await db.flush()
         logger.info(f"Created farm: {farm.id} - {farm.name}")
 
     # Create control point
@@ -124,23 +129,24 @@ def create_control_point_full(
         name=data.control_point_name, frame_name=data.frame_name, farm_id=farm.id
     )
     db.add(control_point)
-    db.commit()
-    db.refresh(control_point)
+    await db.commit()
+    await db.refresh(control_point)
 
     logger.info(f"Created control point: {control_point.id} - {control_point.name}")
     return control_point
 
 
 @router.get("/{control_point_id}", response_model=ControlPoint)
-def get_control_point(
+async def get_control_point(
     control_point_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Получить конкретную точку контроля по ID."""
-    control_point = (
-        db.query(ControlPointModel).filter(ControlPointModel.id == control_point_id).first()
+    result = await db.execute(
+        select(ControlPointModel).filter(ControlPointModel.id == control_point_id)
     )
+    control_point = result.scalar_one_or_none()
 
     if not control_point:
         raise HTTPException(status_code=404, detail="Control point not found")
