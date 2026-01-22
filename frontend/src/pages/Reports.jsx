@@ -71,16 +71,25 @@ function formatTick(value, unit, step) {
     minimumFractionDigits: 0,
     maximumFractionDigits: decimals,
   }).format(value);
-  return unit === '%' ? `${formatted}%` : `${formatted}г`;
+  return unit === '%' ? `${formatted}%` : `${formatted} г`;
 }
 
-function buildYAxis(values, unit) {
+function buildYAxis(values, unit, metricKey) {
+  // Для процентных метрик (uniformity, cv) фиксируем шкалу 0-100%
+  if (unit === '%') {
+    const yMax = 100;
+    const step = 25;
+    const ticks = [0, 25, 50, 75, 100];
+    return { yMax, ticks, step };
+  }
+
+  // Для весовых метрик динамическая шкала
   const safeValues = (values || []).filter(
     (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0
   );
   const maxValue = safeValues.length ? Math.max(...safeValues) : 0;
 
-  const minYMax = unit === '%' ? 5 : 1;
+  const minYMax = 1;
   const targetMax = Math.max(maxValue * 1.1, minYMax);
   const rawStep = targetMax / 3;
   const step = niceStepCeil(rawStep);
@@ -95,18 +104,22 @@ function isValidISODateString(value) {
 }
 
 function mean(values) {
-  if (!values.length) return null;
-  const sum = values.reduce((acc, v) => acc + v, 0);
-  return sum / values.length;
+  if (!values || values.length === 0) return null;
+  const validValues = values.filter(v => typeof v === 'number' && Number.isFinite(v));
+  if (validValues.length === 0) return null;
+  const sum = validValues.reduce((acc, v) => acc + v, 0);
+  return sum / validValues.length;
 }
 
 // По аналогии с бэкендом: variance делим на N (популяционная дисперсия)
 function stdDev(values) {
-  if (values.length <= 1) return 0;
-  const avg = mean(values);
-  if (avg === null) return 0;
-  const variance = values.reduce((acc, v) => acc + (v - avg) ** 2, 0) / values.length;
-  return Math.sqrt(variance);
+  if (!values || values.length === 0) return 0;
+  const validValues = values.filter(v => typeof v === 'number' && Number.isFinite(v));
+  if (validValues.length <= 1) return 0;
+  const avg = mean(validValues);
+  if (avg === null || !Number.isFinite(avg)) return 0;
+  const variance = validValues.reduce((acc, v) => acc + (v - avg) ** 2, 0) / validValues.length;
+  return Number.isFinite(variance) && variance >= 0 ? Math.sqrt(variance) : 0;
 }
 
 function groupReportsByDate(reports) {
@@ -142,21 +155,29 @@ function buildDailyPoints(reports, targetRangePercent) {
 
   for (const g of grouped) {
     const dailyMean = mean(g.grams);
-    if (dailyMean === null) continue;
+    if (dailyMean === null || !Number.isFinite(dailyMean)) continue;
 
     cumulative.push(...g.grams);
 
-    const cumulativeMean = mean(cumulative) ?? dailyMean;
-    const sd = stdDev(cumulative);
-    const cv = cumulativeMean > 0 ? (sd / cumulativeMean) * 100 : 0;
+    const cumulativeMean = mean(cumulative);
+    if (cumulativeMean === null || !Number.isFinite(cumulativeMean)) continue;
 
-    // Однородность по формуле со скрина:
+    const sd = stdDev(cumulative);
+    // CV: защита от деления на ноль и проверка на конечность
+    const cv = cumulativeMean > 0 && Number.isFinite(sd) ? (sd / cumulativeMean) * 100 : 0;
+
+    // Однородность по формуле:
     // (кол-во птиц в целевом диапазоне / общее кол-во взвешенных птиц) * 100
     // Диапазон берём как ±X% от накопительного среднего.
     const lower = cumulativeMean * (1 - p);
     const upper = cumulativeMean * (1 + p);
     const inRange = cumulative.filter((v) => v >= lower && v <= upper).length;
-    const uniformity = cumulative.length ? (inRange / cumulative.length) * 100 : 0;
+    const uniformity = cumulative.length > 0 ? (inRange / cumulative.length) * 100 : 0;
+
+    // Финальная валидация всех метрик перед добавлением в точки
+    if (!Number.isFinite(cv) || !Number.isFinite(uniformity) || !Number.isFinite(sd)) {
+      continue;
+    }
 
     points.push({
       date: g.date,
@@ -165,8 +186,8 @@ function buildDailyPoints(reports, targetRangePercent) {
       meanDaily: dailyMean,
       meanCumulative: cumulativeMean,
       stdDev: sd,
-      cv,
-      uniformity,
+      cv: Math.max(0, Math.min(cv, 100)), // CV ограничиваем 0-100%
+      uniformity: Math.max(0, Math.min(uniformity, 100)), // Однородность ограничиваем 0-100%
     });
   }
 
@@ -201,6 +222,26 @@ export default function Reports() {
   const handleGenerateChart = async () => {
     if (!selectedControlPointId || !selectedDate) {
       alert('Пожалуйста, выберите точку контроля и дату');
+      return;
+    }
+
+    // Проверка корректности uniformityRangePercent для метрики "Однородность"
+    if (selectedMetricKey === 'uniformity') {
+      if (uniformityRangePercent === '' || 
+          !Number.isFinite(Number(uniformityRangePercent)) || 
+          Number(uniformityRangePercent) <= 0) {
+        alert('Пожалуйста, укажите корректное значение для целевого диапазона (больше 0)');
+        return;
+      }
+    }
+
+    // Проверка, что выбранная дата не в будущем (сравниваем строки в формате YYYY-MM-DD)
+    const today = new Date();
+    const todayString = today.getFullYear() + '-' + 
+                        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(today.getDate()).padStart(2, '0');
+    if (selectedDate > todayString) {
+      alert('Нельзя выбрать дату из будущего');
       return;
     }
 
@@ -292,8 +333,13 @@ export default function Reports() {
                 step="0.1"
                 value={uniformityRangePercent}
                 onChange={(e) => {
-                  const parsed = Number(e.target.value);
-                  if (!Number.isFinite(parsed)) return;
+                  const value = e.target.value;
+                  if (value === '') {
+                    setUniformityRangePercent('');
+                    return;
+                  }
+                  const parsed = Number(value);
+                  if (Number.isNaN(parsed) || !Number.isFinite(parsed)) return;
                   setUniformityRangePercent(Math.min(Math.max(parsed, 0), 100));
                 }}
               />
@@ -318,7 +364,12 @@ export default function Reports() {
             <div className="chart">
               {(() => {
                 const metric = getMetricByKey(chartData.metricKey);
-                const points = buildDailyPoints(chartData.reports, uniformityRangePercent);
+                // Обработка пустого значения uniformityRangePercent
+                const safeRangePercent = 
+                  typeof uniformityRangePercent === 'number' && Number.isFinite(uniformityRangePercent)
+                    ? uniformityRangePercent
+                    : 10;
+                const points = buildDailyPoints(chartData.reports, safeRangePercent);
                 const values = (points || [])
                   .map((point) => toNumberOrNull(metric.getValue(point)))
                   .filter((v) => v !== null);
@@ -335,11 +386,12 @@ export default function Reports() {
                 }
 
                 const maxValue = Math.max(...values);
-                // Ось Y: динамический шаг и "красивые" значения
-                const { yMax, ticks: tickValues, step } = buildYAxis(values, metric.unit);
+                // Ось Y: для процентов фиксированная 0-100%, для веса - динамическая
+                const { yMax, ticks: tickValues, step } = buildYAxis(values, metric.unit, metric.key);
 
                 const xStep = 700 / Math.max(points.length - 1, 1);
-                const getY = (value) => 350 - (value / yMax) * 260;
+                // График занимает высоту от y=350 до y=80, то есть 270 пикселей
+                const getY = (value) => 350 - (value / yMax) * 270;
                 const safeValueAt = (index) => toNumberOrNull(metric.getValue(points[index]));
 
                 return (
@@ -348,20 +400,30 @@ export default function Reports() {
                       {chartData.controlPointName} — {metric.label}
                     </h3>
                     <svg viewBox="0 0 800 400" className="chart-svg">
-                      {/* Сетка */}
-                      <line x1="60" y1="350" x2="800" y2="350" stroke="#e0e0e0" strokeWidth="1" />
-                      <line x1="60" y1="260" x2="800" y2="260" stroke="#e0e0e0" strokeWidth="1" />
-                      <line x1="60" y1="170" x2="800" y2="170" stroke="#e0e0e0" strokeWidth="1" />
-                      <line x1="60" y1="80" x2="800" y2="80" stroke="#e0e0e0" strokeWidth="1" />
+                      {/* Сетка - динамическое количество линий в зависимости от количества меток */}
+                      {tickValues.map((tick, idx) => {
+                        const yPosition = 350 - (idx / (tickValues.length - 1)) * 270;
+                        return (
+                          <line
+                            key={`grid-${idx}`}
+                            x1="60"
+                            y1={yPosition}
+                            x2="800"
+                            y2={yPosition}
+                            stroke="#e0e0e0"
+                            strokeWidth="1"
+                          />
+                        );
+                      })}
 
                       {/* Метки на оси Y */}
                       {tickValues.map((tick, idx) => {
-                        const y = [350, 260, 170, 80][idx];
+                        const yPosition = 350 - (idx / (tickValues.length - 1)) * 270;
                         return (
                           <text
                             key={`y-tick-${idx}`}
                             x="50"
-                            y={y + 5}
+                            y={yPosition + 5}
                             fontSize="12"
                             textAnchor="end"
                             fill="#616661"

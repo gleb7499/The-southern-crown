@@ -466,22 +466,12 @@ export default function Settings() {
               >
                 <button
                   type="submit"
-                  className="btn btn-outlined btn-full"
+                  className="btn btn-primary btn-full"
                   disabled={submitting || !selectedCameraControlPoint || !cameraName || !cameraUrl}
                 >
-                  {submitting ? 'Добавление...' : 'Вывести'}
+                  {submitting ? 'Добавление...' : 'Добавить'}
                 </button>
               </div>
-            </div>
-
-            <div className="form-row" style={{ marginTop: '16px' }}>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={submitting || !selectedCameraControlPoint || !cameraName || !cameraUrl}
-              >
-                {submitting ? 'Добавление...' : 'Добавить'}
-              </button>
             </div>
           </form>
         </div>
