@@ -4,6 +4,7 @@ import Loading from '../components/Loading';
 import FiltersForm from '../components/FiltersForm';
 import DateDropdownPicker from '../components/DateDropdownPicker';
 import { farmsAPI } from '../services/api';
+import * as XLSX from 'xlsx';
 
 const REPORT_METRICS = [
   {
@@ -278,11 +279,148 @@ export default function Reports() {
   };
 
   const handleExportXLSX = () => {
-    alert('Экспорт в XLSX - в разработке');
+    if (!chartData || !chartData.reports || chartData.reports.length === 0) {
+      alert('Нет данных для экспорта');
+      return;
+    }
+
+    try {
+      const metric = getMetricByKey(chartData.metricKey);
+      const safeRangePercent = 
+        typeof uniformityRangePercent === 'number' && Number.isFinite(uniformityRangePercent)
+          ? uniformityRangePercent
+          : 10;
+      const points = buildDailyPoints(chartData.reports, safeRangePercent);
+      
+      // Вычисляем агрегированные метрики
+      const allWeights = chartData.reports.map(r => r.gram).filter(g => typeof g === 'number' && Number.isFinite(g));
+      const avgWeight = mean(allWeights);
+      const stdDeviation = stdDev(allWeights);
+      const cv = avgWeight > 0 ? (stdDeviation / avgWeight) * 100 : 0;
+      const lastPoint = points[points.length - 1];
+      const uniformity = lastPoint?.uniformity ?? 0;
+
+      // Создаем рабочую книгу
+      const wb = XLSX.utils.book_new();
+      
+      // Заголовок с метаданными (3 строки)
+      const headerData = [
+        ['Файл:', chartData.controlPointName, '', 'Подсчёт:', chartData.reports.length, '', 'CV [%]:', cv.toFixed(3)],
+        ['Весы:', 'SCALE 1', '', 'Средний [Гр]:', avgWeight?.toFixed(3) || '0.000', '', 'Единообразие [%]:', uniformity.toFixed(3)],
+        ['Замечание:', '', '', 'Ст. отклонение [Гр]:', stdDeviation.toFixed(3), '', 'Скорость [1/Час]:', '']
+      ];
+
+      // Пустая строка
+      const emptyRow = ['', '', '', '', '', '', ''];
+
+      // Заголовки таблицы
+      const tableHeader = ['Файл', 'Количество', 'Дата и время', 'Вес [Гр]', 'Пол / Лимит / Категория'];
+
+      // Данные таблицы
+      const tableData = chartData.reports.map((report, index) => {
+        const dateTime = report.date ? `${report.date} 00:00:00` : '';
+        return [
+          chartData.controlPointName,
+          index + 1,
+          dateTime,
+          report.gram?.toFixed(3) || '0.000',
+          'Не использовался'
+        ];
+      });
+
+      // Собираем все данные
+      const wsData = [
+        ...headerData,
+        emptyRow,
+        tableHeader,
+        ...tableData
+      ];
+
+      // Создаем лист
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Устанавливаем ширину колонок
+      ws['!cols'] = [
+        { wch: 15 },  // Файл
+        { wch: 12 },  // Количество
+        { wch: 20 },  // Дата и время
+        { wch: 12 },  // Вес
+        { wch: 25 }   // Пол / Лимит / Категория
+      ];
+
+      // Добавляем лист в книгу
+      XLSX.utils.book_append_sheet(wb, ws, 'Отчёт');
+
+      // Генерируем имя файла
+      const fileName = `${chartData.controlPointName}_${chartData.date}_${metric.label}.xlsx`;
+
+      // Сохраняем файл
+      XLSX.writeFile(wb, fileName);
+    } catch (error) {
+      console.error('Error exporting XLSX:', error);
+      alert('Ошибка при экспорте в XLSX');
+    }
   };
 
   const handleExportCSV = () => {
-    alert('Экспорт в CSV - в разработке');
+    if (!chartData || !chartData.reports || chartData.reports.length === 0) {
+      alert('Нет данных для экспорта');
+      return;
+    }
+
+    try {
+      const metric = getMetricByKey(chartData.metricKey);
+      const safeRangePercent = 
+        typeof uniformityRangePercent === 'number' && Number.isFinite(uniformityRangePercent)
+          ? uniformityRangePercent
+          : 10;
+      const points = buildDailyPoints(chartData.reports, safeRangePercent);
+      
+      // Вычисляем агрегированные метрики
+      const allWeights = chartData.reports.map(r => r.gram).filter(g => typeof g === 'number' && Number.isFinite(g));
+      const avgWeight = mean(allWeights);
+      const stdDeviation = stdDev(allWeights);
+      const cv = avgWeight > 0 ? (stdDeviation / avgWeight) * 100 : 0;
+      const lastPoint = points[points.length - 1];
+      const uniformity = lastPoint?.uniformity ?? 0;
+
+      // Формируем CSV содержимое с точкой с запятой как разделителем (для русского Excel)
+      let csvContent = '';
+      
+      // Заголовок с метаданными (3 строки)
+      csvContent += `Файл:;${chartData.controlPointName};;Подсчёт:;${chartData.reports.length};;CV [%]:;${cv.toFixed(3)}\n`;
+      csvContent += `Весы:;SCALE 1;;Средний [Гр]:;${avgWeight?.toFixed(3) || '0.000'};;Единообразие [%]:;${uniformity.toFixed(3)}\n`;
+      csvContent += `Замечание:;;;Ст. отклонение [Гр]:;${stdDeviation.toFixed(3)};;Скорость [1/Час]:;\n`;
+      
+      // Пустая строка и заголовки таблицы
+      csvContent += `;;;;;;;\n`;
+      csvContent += 'Файл;Количество;Дата и время;Вес [Гр];Пол / Лимит / Категория\n';
+
+      // Данные таблицы
+      chartData.reports.forEach((report, index) => {
+        const dateTime = report.date ? `${report.date} 00:00:00` : '';
+        const weight = report.gram?.toFixed(3) || '0.000';
+        csvContent += `${chartData.controlPointName};${index + 1};${dateTime};${weight};Не использовался\n`;
+      });
+
+      // Создаем Blob и скачиваем
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      const fileName = `${chartData.controlPointName}_${chartData.date}_${metric.label}.csv`;
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Ошибка при экспорте в CSV');
+    }
   };
 
   if (loading) {
