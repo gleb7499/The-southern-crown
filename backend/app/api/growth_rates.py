@@ -2,7 +2,8 @@ import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
@@ -17,12 +18,12 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/", response_model=List[GrowthRate])
-def get_growth_rates(
+async def get_growth_rates(
     farm_id: Optional[int] = Query(None, description="Фильтр по ID фермы"),
     control_point_id: Optional[int] = Query(None, description="Фильтр по ID точки контроля"),
     skip: int = Query(0, ge=0, description="Пропустить записей"),
     limit: int = Query(100, ge=1, le=1000, description="Максимум записей"),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -32,29 +33,34 @@ def get_growth_rates(
     - **farm_id**: ID фермы
     - **control_point_id**: ID точки контроля
     """
-    query = db.query(GrowthRateModel)
+    query = select(GrowthRateModel)
 
     if farm_id:
-        query = query.filter(GrowthRateModel.farm_id == farm_id)
+        query = query.where(GrowthRateModel.farm_id == farm_id)
 
     if control_point_id:
-        query = query.filter(GrowthRateModel.control_point_id == control_point_id)
+        query = query.where(GrowthRateModel.control_point_id == control_point_id)
 
-    growth_rates = query.offset(skip).limit(limit).all()
+    query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
+    growth_rates = result.scalars().all()
     logger.info(f"Retrieved {len(growth_rates)} growth rates with filters")
     return growth_rates
 
 
 @router.get("/{growth_rate_id}", response_model=GrowthRate)
-def get_growth_rate(
+async def get_growth_rate(
     growth_rate_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
     Получить конкретную норму развития по ID.
     """
-    growth_rate = db.query(GrowthRateModel).filter(GrowthRateModel.id == growth_rate_id).first()
+    result = await db.execute(
+        select(GrowthRateModel).filter(GrowthRateModel.id == growth_rate_id)
+    )
+    growth_rate = result.scalar_one_or_none()
 
     if not growth_rate:
         raise HTTPException(
@@ -65,9 +71,9 @@ def get_growth_rate(
 
 
 @router.post("/", response_model=GrowthRate, status_code=201)
-def create_growth_rate(
+async def create_growth_rate(
     growth_rate: GrowthRateCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -84,15 +90,17 @@ def create_growth_rate(
     Проверяется существование фермы и точки контроля, их соответствие друг другу.
     """
     # Проверка существования фермы
-    farm = db.query(Farm).filter(Farm.id == growth_rate.farm_id).first()
+    farm_result = await db.execute(select(Farm).filter(Farm.id == growth_rate.farm_id))
+    farm = farm_result.scalar_one_or_none()
     if not farm:
         logger.error(f"Farm not found: {growth_rate.farm_id}")
         raise HTTPException(status_code=404, detail=f"Farm with id {growth_rate.farm_id} not found")
 
     # Проверка существования точки контроля
-    control_point = (
-        db.query(ControlPoint).filter(ControlPoint.id == growth_rate.control_point_id).first()
+    cp_result = await db.execute(
+        select(ControlPoint).filter(ControlPoint.id == growth_rate.control_point_id)
     )
+    control_point = cp_result.scalar_one_or_none()
     if not control_point:
         logger.error(f"Control point not found: {growth_rate.control_point_id}")
         raise HTTPException(
@@ -120,8 +128,8 @@ def create_growth_rate(
     # Создание записи
     db_growth_rate = GrowthRateModel(**growth_rate.model_dump())
     db.add(db_growth_rate)
-    db.commit()
-    db.refresh(db_growth_rate)
+    await db.commit()
+    await db.refresh(db_growth_rate)
 
     logger.info(
         f"Created growth rate: id={db_growth_rate.id}, farm={growth_rate.farm_id}, cp={growth_rate.control_point_id}"
@@ -130,10 +138,10 @@ def create_growth_rate(
 
 
 @router.put("/{growth_rate_id}", response_model=GrowthRate)
-def update_growth_rate(
+async def update_growth_rate(
     growth_rate_id: int,
     growth_rate_update: GrowthRateUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -143,7 +151,10 @@ def update_growth_rate(
     Проверяется валидность новых значений farm_id и control_point_id.
     """
     # Получаем существующую запись
-    db_growth_rate = db.query(GrowthRateModel).filter(GrowthRateModel.id == growth_rate_id).first()
+    result = await db.execute(
+        select(GrowthRateModel).filter(GrowthRateModel.id == growth_rate_id)
+    )
+    db_growth_rate = result.scalar_one_or_none()
 
     if not db_growth_rate:
         raise HTTPException(
@@ -158,7 +169,8 @@ def update_growth_rate(
 
     # Если обновляется farm_id - проверяем существование
     if "farm_id" in update_data:
-        farm = db.query(Farm).filter(Farm.id == update_data["farm_id"]).first()
+        farm_result = await db.execute(select(Farm).filter(Farm.id == update_data["farm_id"]))
+        farm = farm_result.scalar_one_or_none()
         if not farm:
             raise HTTPException(
                 status_code=404, detail=f"Farm with id {update_data['farm_id']} not found"
@@ -166,11 +178,10 @@ def update_growth_rate(
 
     # Если обновляется control_point_id - проверяем существование
     if "control_point_id" in update_data:
-        control_point = (
-            db.query(ControlPoint)
-            .filter(ControlPoint.id == update_data["control_point_id"])
-            .first()
+        cp_result = await db.execute(
+            select(ControlPoint).filter(ControlPoint.id == update_data["control_point_id"])
         )
+        control_point = cp_result.scalar_one_or_none()
         if not control_point:
             raise HTTPException(
                 status_code=404,
@@ -181,7 +192,8 @@ def update_growth_rate(
     final_farm_id = update_data.get("farm_id", db_growth_rate.farm_id)
     final_cp_id = update_data.get("control_point_id", db_growth_rate.control_point_id)
 
-    control_point_check = db.query(ControlPoint).filter(ControlPoint.id == final_cp_id).first()
+    cp_check_result = await db.execute(select(ControlPoint).filter(ControlPoint.id == final_cp_id))
+    control_point_check = cp_check_result.scalar_one_or_none()
     if control_point_check and control_point_check.farm_id != final_farm_id:  # type: ignore
         raise HTTPException(
             status_code=400,
@@ -202,17 +214,17 @@ def update_growth_rate(
     for field, value in update_data.items():
         setattr(db_growth_rate, field, value)
 
-    db.commit()
-    db.refresh(db_growth_rate)
+    await db.commit()
+    await db.refresh(db_growth_rate)
 
     logger.info(f"Updated growth rate: id={growth_rate_id}, fields={list(update_data.keys())}")
     return db_growth_rate
 
 
 @router.delete("/{growth_rate_id}")
-def delete_growth_rate(
+async def delete_growth_rate(
     growth_rate_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -220,15 +232,18 @@ def delete_growth_rate(
 
     - **growth_rate_id**: ID нормы развития для удаления
     """
-    growth_rate = db.query(GrowthRateModel).filter(GrowthRateModel.id == growth_rate_id).first()
+    result = await db.execute(
+        select(GrowthRateModel).filter(GrowthRateModel.id == growth_rate_id)
+    )
+    growth_rate = result.scalar_one_or_none()
 
     if not growth_rate:
         raise HTTPException(
             status_code=404, detail=f"Growth rate with id {growth_rate_id} not found"
         )
 
-    db.delete(growth_rate)
-    db.commit()
+    await db.delete(growth_rate)
+    await db.commit()
 
     logger.info(f"Deleted growth rate: id={growth_rate_id}")
     return {"message": f"Growth rate {growth_rate_id} deleted successfully"}

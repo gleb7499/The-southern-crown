@@ -1,0 +1,17 @@
+[Unit]
+Description=RTSP restreaming service
+After=network.target
+After=postgresql.service
+
+[Service]
+Type=simple
+PIDFile=/var/run/restream.pid
+WorkingDirectory=/home/restream/mediamtx/service
+User=restream
+Environment="PG_DSN=postgresql://rockwell:rockwell@localhost:5432/rockwell"
+ExecStart=/usr/bin/python3 srvc_restream.py
+TimeoutSec=5
+
+[Install]
+WantedBy=multi-user.target 
+

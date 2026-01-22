@@ -2,7 +2,8 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
@@ -15,10 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/farms", response_model=List[Farm])
-def get_farms(
+async def get_farms(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -27,14 +28,17 @@ def get_farms(
     - **skip**: Количество записей для пропуска
     - **limit**: Максимальное количество возвращаемых записей
     """
-    farms = db.query(FarmModel).offset(skip).limit(limit).all()
+    result = await db.execute(select(FarmModel).offset(skip).limit(limit))
+    farms = result.scalars().all()
     logger.info(f"Returning {len(farms)} farms")
     return farms
 
 
 @router.post("/farms", response_model=Farm)
-def create_farm(
-    farm: FarmCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+async def create_farm(
+    farm: FarmCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Создать новую ферму.
@@ -48,8 +52,8 @@ def create_farm(
 
     db_farm = FarmModel(**farm.dict())
     db.add(db_farm)
-    db.commit()
-    db.refresh(db_farm)
+    await db.commit()
+    await db.refresh(db_farm)
 
     logger.info(f"Created farm: {db_farm.id} - {db_farm.name}")
     return db_farm

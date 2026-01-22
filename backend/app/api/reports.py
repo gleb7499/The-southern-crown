@@ -3,8 +3,8 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
@@ -30,9 +30,9 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/", response_model=Report, status_code=201)
-def create_report(
+async def create_report(
     report: ReportCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -44,15 +44,17 @@ def create_report(
     - **gram**: Вес в граммах (положительное число)
     """
     # Проверка существования фермы
-    farm = db.query(Farm).filter(Farm.id == report.farm_id).first()
+    farm_result = await db.execute(select(Farm).filter(Farm.id == report.farm_id))
+    farm = farm_result.scalar_one_or_none()
     if not farm:
         logger.error(f"Farm not found: {report.farm_id}")
         raise HTTPException(status_code=404, detail=f"Farm with id {report.farm_id} not found")
 
     # Проверка существования контрольной точки
-    control_point = (
-        db.query(ControlPoint).filter(ControlPoint.id == report.control_point_id).first()
+    cp_result = await db.execute(
+        select(ControlPoint).filter(ControlPoint.id == report.control_point_id)
     )
+    control_point = cp_result.scalar_one_or_none()
     if not control_point:
         logger.error(f"Control point not found: {report.control_point_id}")
         raise HTTPException(
@@ -73,8 +75,8 @@ def create_report(
     # Создание записи
     db_report = ReportModel(**report.model_dump())
     db.add(db_report)
-    db.commit()
-    db.refresh(db_report)
+    await db.commit()
+    await db.refresh(db_report)
 
     logger.info(
         f"Created report: id={db_report.id}, farm={report.farm_id}, cp={report.control_point_id}, date={report.date}"
@@ -83,14 +85,14 @@ def create_report(
 
 
 @router.get("/", response_model=List[Report])
-def get_reports(
+async def get_reports(
     farm_id: Optional[int] = Query(None, description="Фильтр по ID фермы"),
     control_point_id: Optional[int] = Query(None, description="Фильтр по ID контрольной точки"),
     date_from: Optional[date] = Query(None, description="Начальная дата периода"),
     date_to: Optional[date] = Query(None, description="Конечная дата периода"),
     skip: int = Query(0, ge=0, description="Пропустить записей"),
     limit: int = Query(100, ge=1, le=1000, description="Максимум записей"),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -101,22 +103,23 @@ def get_reports(
     - **control_point_id**: ID контрольной точки
     - **date_from/date_to**: Диапазон дат
     """
-    query = db.query(ReportModel)
+    query = select(ReportModel)
 
     if farm_id:
-        query = query.filter(ReportModel.farm_id == farm_id)
+        query = query.where(ReportModel.farm_id == farm_id)
 
     if control_point_id:
-        query = query.filter(ReportModel.control_point_id == control_point_id)
+        query = query.where(ReportModel.control_point_id == control_point_id)
 
     if date_from:
-        query = query.filter(ReportModel.date >= date_from)
+        query = query.where(ReportModel.date >= date_from)
 
     if date_to:
-        query = query.filter(ReportModel.date <= date_to)
+        query = query.where(ReportModel.date <= date_to)
 
-    query = query.order_by(ReportModel.date.desc())
-    reports = query.offset(skip).limit(limit).all()
+    query = query.order_by(ReportModel.date.desc()).offset(skip).limit(limit)
+    result = await db.execute(query)
+    reports = result.scalars().all()
 
     logger.info(f"Retrieved {len(reports)} reports with filters")
     return reports
@@ -126,9 +129,9 @@ def get_reports(
 
 
 @router.post("/statistics", response_model=List[ReportStatistics])
-def get_statistics(
+async def get_statistics(
     filters: StatisticsRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -142,7 +145,7 @@ def get_statistics(
     """
     # Базовый запрос с группировкой
     query = (
-        db.query(
+        select(
             ReportModel.control_point_id,
             ControlPoint.name.label("control_point_name"),
             ReportModel.farm_id,
@@ -151,24 +154,24 @@ def get_statistics(
             func.avg(ReportModel.gram).label("average_weight"),
             func.min(ReportModel.gram).label("min_weight"),
             func.max(ReportModel.gram).label("max_weight"),
-            # Стандартное отклонение (SQLite не имеет встроенной функции, используем простую формулу)
         )
+        .select_from(ReportModel)
         .join(ControlPoint, ReportModel.control_point_id == ControlPoint.id)
         .join(Farm, ReportModel.farm_id == Farm.id)
     )
 
     # Применение фильтров
     if filters.farm_ids:
-        query = query.filter(ReportModel.farm_id.in_(filters.farm_ids))
+        query = query.where(ReportModel.farm_id.in_(filters.farm_ids))
 
     if filters.control_point_ids:
-        query = query.filter(ReportModel.control_point_id.in_(filters.control_point_ids))
+        query = query.where(ReportModel.control_point_id.in_(filters.control_point_ids))
 
     if filters.date_from:
-        query = query.filter(ReportModel.date >= filters.date_from)
+        query = query.where(ReportModel.date >= filters.date_from)
 
     if filters.date_to:
-        query = query.filter(ReportModel.date <= filters.date_to)
+        query = query.where(ReportModel.date <= filters.date_to)
 
     # Группировка
     query = query.group_by(
@@ -178,23 +181,25 @@ def get_statistics(
         Farm.name,
     )
 
-    results = query.all()
+    result = await db.execute(query)
+    results = result.all()
 
     # Вычисление стандартного отклонения для каждой группы
     statistics = []
     for row in results:
         # Получаем все значения gram для этой контрольной точки
-        values_query = db.query(ReportModel.gram).filter(
+        values_query = select(ReportModel.gram).where(
             ReportModel.control_point_id == row.control_point_id,
             ReportModel.farm_id == row.farm_id,
         )
 
         if filters.date_from:
-            values_query = values_query.filter(ReportModel.date >= filters.date_from)
+            values_query = values_query.where(ReportModel.date >= filters.date_from)
         if filters.date_to:
-            values_query = values_query.filter(ReportModel.date <= filters.date_to)
+            values_query = values_query.where(ReportModel.date <= filters.date_to)
 
-        values = [v[0] for v in values_query.all()]
+        values_result = await db.execute(values_query)
+        values = [v[0] for v in values_result.all()]
 
         # Вычисление стандартного отклонения
         if len(values) > 1:
@@ -228,9 +233,9 @@ def get_statistics(
 
 
 @router.post("/generate", response_model=ReportResponse)
-def generate_report(
+async def generate_report(
     report_request: ReportRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -242,22 +247,25 @@ def generate_report(
 
     for cp_id in report_request.control_point_ids:
         # Получаем контрольную точку
-        control_point = db.query(ControlPoint).filter(ControlPoint.id == cp_id).first()
+        cp_result = await db.execute(select(ControlPoint).filter(ControlPoint.id == cp_id))
+        control_point = cp_result.scalar_one_or_none()
 
         if not control_point:
             logger.warning(f"Control point {cp_id} not found, skipping")
             continue
 
         # Получаем данные отчетов
-        query = db.query(ReportModel).filter(ReportModel.control_point_id == cp_id)
+        query = select(ReportModel).where(ReportModel.control_point_id == cp_id)
 
         if report_request.start_date:
-            query = query.filter(ReportModel.date >= report_request.start_date)
+            query = query.where(ReportModel.date >= report_request.start_date)
 
         if report_request.end_date:
-            query = query.filter(ReportModel.date <= report_request.end_date)
+            query = query.where(ReportModel.date <= report_request.end_date)
 
-        reports = query.order_by(ReportModel.date).all()
+        query = query.order_by(ReportModel.date)
+        result = await db.execute(query)
+        reports = result.scalars().all()
 
         if not reports:
             logger.warning(f"No data for control point {cp_id}")
