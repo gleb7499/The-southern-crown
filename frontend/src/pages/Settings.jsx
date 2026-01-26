@@ -1,7 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
 import Loading from '../components/Loading';
 import { farmsAPI, controlPointsAPI, camerasAPI } from '../services/api';
+import { parseGrowthNormsFiles } from '../services/growthNormsParsing';
+import {
+  downloadGrowthNormsAsJson,
+  getGrowthNormsForControlPoint,
+  upsertGrowthNormsForControlPoint,
+} from '../services/growthNormsStorage';
 
 const ADD_FARM_OPTION_VALUE = '__add_farm__';
 
@@ -34,6 +40,9 @@ export default function Settings() {
   const [showAddFarmModal, setShowAddFarmModal] = useState(false);
   const [newFarmName, setNewFarmName] = useState('');
   const [creatingFarm, setCreatingFarm] = useState(false);
+  const [growthUploadBusy, setGrowthUploadBusy] = useState(false);
+  const [growthUploadStatus, setGrowthUploadStatus] = useState('');
+  const growthFileInputRef = useRef(null);
 
   // Form states for creating control point
   const [selectedFarm, setSelectedFarm] = useState('');
@@ -226,11 +235,58 @@ export default function Settings() {
     }
   };
 
-  const handleUploadGrowthFile = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      alert(`Файл ${file.name} готов к загрузке (функция в разработке)`);
+  const handleUploadGrowthFile = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    if (!selectedNormControlPoint) {
+      alert('Сначала выберите ферму/корпус/точку контроля, затем загрузите файл норм');
+      if (growthFileInputRef.current) growthFileInputRef.current.value = '';
+      return;
     }
+
+    try {
+      setGrowthUploadBusy(true);
+      setGrowthUploadStatus('Чтение файла…');
+
+      const parsed = await parseGrowthNormsFiles(files);
+      upsertGrowthNormsForControlPoint(parseInt(selectedNormControlPoint), parsed);
+
+      const byDateCount = parsed.byDate ? Object.keys(parsed.byDate).length : 0;
+      const byDayCount = parsed.byDay ? Object.keys(parsed.byDay).length : 0;
+
+      setGrowthUploadStatus(
+        `Загружено норм: по датам=${byDateCount}${byDayCount ? `, по дням=${byDayCount}` : ''}`
+      );
+      alert('Нормы развития загружены и сохранены на фронте для выбранной точки контроля');
+    } catch (error) {
+      console.error('Error uploading growth norms:', error);
+      alert(error?.message || 'Ошибка при загрузке норм развития');
+      setGrowthUploadStatus('');
+    } finally {
+      setGrowthUploadBusy(false);
+      if (growthFileInputRef.current) growthFileInputRef.current.value = '';
+    }
+  };
+
+  const handleDownloadGrowthNorms = () => {
+    if (!selectedNormControlPoint) {
+      alert('Выберите точку контроля');
+      return;
+    }
+    try {
+      downloadGrowthNormsAsJson(parseInt(selectedNormControlPoint));
+    } catch (e) {
+      alert(e?.message || 'Нет сохранённых норм для выгрузки');
+    }
+  };
+
+  const handleReplaceGrowthNorms = () => {
+    if (!selectedNormControlPoint) {
+      alert('Выберите точку контроля');
+      return;
+    }
+    growthFileInputRef.current?.click();
   };
 
   const handleResetGrowthForm = () => {
@@ -532,8 +588,11 @@ export default function Settings() {
               type="file"
               id="growth-file"
               onChange={handleUploadGrowthFile}
+              ref={growthFileInputRef}
               className="file-input"
               accept=".xlsx,.xls,.csv"
+              multiple
+              disabled={growthUploadBusy}
             />
             <label htmlFor="growth-file" className="file-label">
               <svg
@@ -554,13 +613,44 @@ export default function Settings() {
               </svg>
               Файл с нормами развития
             </label>
-            <button className="btn btn-primary" style={{ maxWidth: '150px' }}>
+            <button
+              className="btn btn-primary"
+              style={{ maxWidth: '150px' }}
+              type="button"
+              onClick={handleDownloadGrowthNorms}
+              disabled={!selectedNormControlPoint}
+            >
               Выгрузить
             </button>
-            <button className="btn btn-dark" style={{ maxWidth: '150px' }}>
+            <button
+              className="btn btn-dark"
+              style={{ maxWidth: '150px' }}
+              type="button"
+              onClick={handleReplaceGrowthNorms}
+              disabled={growthUploadBusy || !selectedNormControlPoint}
+            >
               Заменить
             </button>
           </div>
+
+          {selectedNormControlPoint && (
+            <div style={{ marginTop: '8px', color: '#616661', fontSize: '14px' }}>
+              {growthUploadBusy
+                ? 'Загрузка норм…'
+                : growthUploadStatus ||
+                  (() => {
+                    const existing = getGrowthNormsForControlPoint(
+                      parseInt(selectedNormControlPoint)
+                    );
+                    if (!existing) return 'Нормы для этой точки ещё не загружены';
+                    const byDateCount = existing.byDate ? Object.keys(existing.byDate).length : 0;
+                    const byDayCount = existing.byDay ? Object.keys(existing.byDay).length : 0;
+                    return `Сохранено норм: по датам=${byDateCount}${
+                      byDayCount ? `, по дням=${byDayCount}` : ''
+                    }`;
+                  })()}
+            </div>
+          )}
 
           <div className="growth-filters">
             <div className="form-group">

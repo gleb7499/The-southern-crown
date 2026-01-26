@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
+import { getGrowthNormsForControlPoint } from '../services/growthNormsStorage';
 
 export default function ReportSection({ controlPointId, controlPointName }) {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const growthNorms = controlPointId ? getGrowthNormsForControlPoint(controlPointId) : null;
 
   useEffect(() => {
     if (controlPointId) {
@@ -76,12 +79,32 @@ export default function ReportSection({ controlPointId, controlPointName }) {
               .slice()
               .reverse()
               .map((report, index) => {
-                const dayDeviation = Math.round(((report.gram - 1500) / 1500) * 100);
+                const developmentDay = reports.length - index;
+                const reportIsoDate = report?.date ? String(report.date) : null;
+
+                const normGramByDate =
+                  growthNorms?.byDate && reportIsoDate ? growthNorms.byDate[reportIsoDate] : null;
+                const normGramByDay =
+                  growthNorms?.byDay && developmentDay
+                    ? growthNorms.byDay[String(developmentDay)]
+                    : null;
+
+                const normGram =
+                  typeof normGramByDate === 'number'
+                    ? normGramByDate
+                    : typeof normGramByDay === 'number'
+                      ? normGramByDay
+                      : null;
+
+                const dayDeviation =
+                  normGram && normGram > 0
+                    ? Math.round(((report.gram - normGram) / normGram) * 100)
+                    : 0;
                 return (
                   <div key={report.id} className="report-item-vertical report-day-row">
                     <div className="report-day-column">
                       <span className="report-label-top">День развития</span>
-                      <span className="report-value-large">{reports.length - index}</span>
+                      <span className="report-value-large">{developmentDay}</span>
                     </div>
                     <div className="report-day-column">
                       <span className="report-label-top">Среднее отклонение</span>
@@ -94,7 +117,6 @@ export default function ReportSection({ controlPointId, controlPointName }) {
                               height="16"
                               viewBox="0 0 16 16"
                               fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
                               style={{ marginRight: '4px' }}
                             >
                               <path
@@ -109,7 +131,6 @@ export default function ReportSection({ controlPointId, controlPointName }) {
                               height="16"
                               viewBox="0 0 16 16"
                               fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
                               style={{ marginRight: '4px' }}
                             >
                               <path
@@ -124,7 +145,6 @@ export default function ReportSection({ controlPointId, controlPointName }) {
                               height="16"
                               viewBox="0 0 16 16"
                               fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
                               style={{ marginRight: '4px' }}
                             >
                               <path
@@ -145,7 +165,7 @@ export default function ReportSection({ controlPointId, controlPointName }) {
                                     : '#616661',
                             }}
                           >
-                            {dayDeviation}%
+                            {normGram ? `${dayDeviation}%` : '—'}
                           </span>
                         </div>
                       </div>
