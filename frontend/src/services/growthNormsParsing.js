@@ -110,6 +110,53 @@ function computeAverageFromTable(text) {
   return sum / arr.length;
 }
 
+function parseGrowthNormsTable(rows) {
+  // Новый формат: таблица с колонками [день, среднесуточный_привес, живая_масса_г, ...]
+  // Находим строку с заголовком, где есть "Средне-суточный" или "Живая масса"
+  let headerIdx = -1;
+  for (let i = 0; i < Math.min(rows.length, 15); i++) {
+    const row = rows[i] || [];
+    const rowStr = row.map((c) => String(c || '').toLowerCase()).join(' ');
+    if (rowStr.includes('живая масса') || rowStr.includes('средне-суточный')) {
+      headerIdx = i;
+      break;
+    }
+  }
+
+  if (headerIdx === -1) return null;
+
+  // Пропускаем дополнительные строки заголовка (нумерация колонок, единицы измерения)
+  let dataStartIdx = headerIdx + 1;
+  // Обычно после основного заголовка идёт строка с номерами колонок ("1","2","3"...) и строка с единицами ("дни","гр","гр"...)
+  while (dataStartIdx < rows.length) {
+    const row = rows[dataStartIdx] || [];
+    const first = String(row[0] || '').trim().toLowerCase();
+    // Если первая ячейка — "дни", "день", число типа "1","2","3" (номер колонки) — пропускаем
+    if (first === 'дни' || first === 'день' || /^[1-9]$/.test(first)) {
+      dataStartIdx++;
+    } else {
+      break;
+    }
+  }
+
+  const byDay = {};
+  for (let i = dataStartIdx; i < rows.length; i++) {
+    const row = rows[i] || [];
+    const dayCell = row[0];
+    const weightCell = row[2]; // колонка "Живая масса, г"
+
+    const day = parseNumberMaybe(dayCell);
+    const weight = parseNumberMaybe(weightCell);
+
+    if (day != null && weight != null && day >= 0 && weight > 0) {
+      byDay[String(Math.round(day))] = weight;
+    }
+  }
+
+  if (Object.keys(byDay).length === 0) return null;
+  return { byDay };
+}
+
 function parseTwoColumnNorms(text) {
   const delimiter = detectDelimiter(text);
   const lines = text
@@ -164,6 +211,7 @@ export async function parseGrowthNormsFiles(fileList) {
   if (!files.length) throw new Error('Файлы не выбраны');
 
   const byDate = {};
+  let byDay = null;
   const sources = [];
 
   for (const file of files) {
@@ -171,6 +219,7 @@ export async function parseGrowthNormsFiles(fileList) {
     const buf = await file.arrayBuffer();
 
     let text;
+    let rows = null;
     if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
       const XLSX = await import('xlsx');
       const workbook = XLSX.read(buf, { type: 'array' });
@@ -179,22 +228,34 @@ export async function parseGrowthNormsFiles(fileList) {
         throw new Error(`Пустой Excel-файл: ${file.name}`);
       }
       const sheet = workbook.Sheets[firstSheetName];
-      // Преобразуем в CSV и дальше используем общий парсер
+      // Получаем как массив массивов для табличного парсинга
+      rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+      // Также получаем CSV для совместимости со старыми форматами
       text = XLSX.utils.sheet_to_csv(sheet, { FS: ';' });
     } else {
       text = decodePossiblyCp1251(buf);
     }
 
-    // 1) Пробуем формат "2 колонки" (day/date;gram)
+    // 1) Пробуем новый формат: табличная структура с днями и живой массой
+    if (rows) {
+      const tableFormat = parseGrowthNormsTable(rows);
+      if (tableFormat && tableFormat.byDay) {
+        byDay = { ...(byDay || {}), ...tableFormat.byDay };
+        sources.push({ fileName: file.name, parsedAs: 'growth-table' });
+        continue;
+      }
+    }
+
+    // 2) Пробуем формат "2 колонки" (day/date;gram)
     const twoCol = parseTwoColumnNorms(text);
     if (twoCol) {
       if (twoCol.byDate) Object.assign(byDate, twoCol.byDate);
+      if (twoCol.byDay) byDay = { ...(byDay || {}), ...twoCol.byDay };
       sources.push({ fileName: file.name, parsedAs: 'two-column' });
-      // byDay здесь возвращаем наверх отдельно
       continue;
     }
 
-    // 2) Формат выгрузки с весов: одна дата + средний вес
+    // 3) Формат выгрузки с весов: одна дата + средний вес
     const isoDate = extractDateFromFilename(file.name);
     const avg = extractAverageFromHeader(text) ?? computeAverageFromTable(text);
 
@@ -207,18 +268,6 @@ export async function parseGrowthNormsFiles(fileList) {
 
     byDate[isoDate] = avg;
     sources.push({ fileName: file.name, parsedAs: 'scale-export', date: isoDate, avgGram: avg });
-  }
-
-  // если были two-column с byDay — возьмём их из последнего успешно распознанного
-  // (для "scale-export" byDay не нужен, там byDate)
-  let byDay;
-  for (const file of files) {
-    const buf = await file.arrayBuffer();
-    const text = decodePossiblyCp1251(buf);
-    const twoCol = parseTwoColumnNorms(text);
-    if (twoCol && twoCol.byDay) {
-      byDay = { ...(byDay || {}), ...twoCol.byDay };
-    }
   }
 
   if (!Object.keys(byDate).length && !byDay) {
