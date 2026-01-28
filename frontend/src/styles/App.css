@@ -806,6 +806,7 @@ body {
   gap: 16px;
   margin-bottom: 24px;
   align-items: flex-end;
+  --chart-control-height: 54px;
 }
 
 .control-group {
@@ -828,6 +829,15 @@ body {
   font-size: 14px;
   background-color: #ffffff;
   color: #000000;
+}
+
+/* Chart controls: inputs/selects должны быть той же высоты, что и кнопка */
+.chart-controls .filter-select,
+.chart-controls .filter-input,
+.chart-controls .btn {
+  height: var(--chart-control-height);
+  min-height: var(--chart-control-height);
+  box-sizing: border-box;
 }
 
 .filter-select:focus,
