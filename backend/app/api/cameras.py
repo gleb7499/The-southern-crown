@@ -22,9 +22,9 @@ async def get_cameras(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Получить список камер с опциональной фильтрацией по точке контроля.
+    Get the list of cameras with optional filtering by control point.
 
-    - **control_point_id**: ID точки контроля для фильтрации (опционально)
+    - **control_point_id**: Control point ID for filtering (optional)
     """
     query = select(CameraModel)
 
@@ -42,22 +42,22 @@ async def create_camera(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Создать новую камеру.
+    Create a new camera.
 
-    - **name**: Название камеры
-    - **url**: URL потока камеры
-    - **farm_id**: Ферма с id фермой
-    - **control_point_id**: ID точки контроля, к которой привязана камера
+    - **name**: Camera name
+    - **url**: Camera stream URL
+    - **farm_id**: Farm with the farm id
+    - **control_point_id**: ID of the control point the camera is attached to
 
-    Проверяется существование фермы и точки контроля, а также их соответствие.
+    The existence of the farm and control point is checked, as well as their correspondence.
     """
-    # Проверка существования фермы
+    # Check that the farm exists
     farm_result = await db.execute(select(Farm).filter(Farm.id == camera.farm_id))
     farm = farm_result.scalar_one_or_none()
     if not farm:
         raise HTTPException(status_code=404, detail=f"Farm with id {camera.farm_id} not found")
 
-    # Проверка существования точки контроля
+    # Check that the control point exists
     cp_result = await db.execute(
         select(ControlPoint).filter(ControlPoint.id == camera.control_point_id)
     )
@@ -68,7 +68,7 @@ async def create_camera(
             detail=f"Control point with id {camera.control_point_id} not found",
         )
 
-    # Проверка что точка контроля принадлежит указанной ферме
+    # Check that the control point belongs to the specified farm
     if control_point.farm_id != camera.farm_id:  # type: ignore
         raise HTTPException(
             status_code=400,
@@ -92,9 +92,9 @@ async def delete_camera(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Удалить камеру по ID.
+    Delete a camera by ID.
 
-    - **camera_id**: ID камеры для удаления
+    - **camera_id**: ID of the camera to delete
     """
     result = await db.execute(select(CameraModel).filter(CameraModel.id == camera_id))
     camera = result.scalar_one_or_none()

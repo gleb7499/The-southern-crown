@@ -1,52 +1,52 @@
-# Линтинг всех типов файлов в проекте
+# Linting All File Types in the Project
 
-## 🎯 Поддерживаемые типы файлов
+## 🎯 Supported File Types
 
-Наша система линтинга покрывает **все** типы файлов в проекте:
+Our linting system covers **all** file types in the project:
 
 ### ✅ JavaScript / React
 
-- **ESLint** - качество кода, ошибки, антипаттерны
-- **Prettier** - форматирование
-- **Автоисправление**: Да
+- **ESLint** - code quality, errors, anti-patterns
+- **Prettier** - formatting
+- **Auto-fix**: Yes
 
 ### ✅ Python
 
-- **Black** - форматирование
-- **isort** - сортировка импортов
-- **Flake8** - проверка стиля PEP 8
-- **Автоисправление**: Да (Black + isort), Flake8 только проверяет
+- **Black** - formatting
+- **isort** - import sorting
+- **Flake8** - PEP 8 style checking
+- **Auto-fix**: Yes (Black + isort), Flake8 only checks
 
 ### ✅ Markdown (.md)
 
-- **markdownlint** - структура, стиль, соответствие CommonMark
-- **Prettier** - форматирование прозы
-- **Автоисправление**: Да
+- **markdownlint** - structure, style, CommonMark compliance
+- **Prettier** - prose formatting
+- **Auto-fix**: Yes
 
 ### ✅ YAML (.yml, .yaml)
 
-- **Prettier** - форматирование, проверка синтаксиса
-- **Автоисправление**: Да
+- **Prettier** - formatting, syntax checking
+- **Auto-fix**: Yes
 
 ### ✅ JSON
 
-- **Prettier** - форматирование, валидация синтаксиса
-- **Автоисправление**: Да
+- **Prettier** - formatting, syntax validation
+- **Auto-fix**: Yes
 
 ### ✅ CSS
 
-- **Prettier** - форматирование
-- **Автоисправление**: Да
+- **Prettier** - formatting
+- **Auto-fix**: Yes
 
 ### ✅ EditorConfig
 
-- **Базовые правила** для всех файлов (отступы, кодировка, переносы)
-- **Автоматически** применяется редактором
+- **Base rules** for all files (indentation, encoding, line endings)
+- Applied **automatically** by the editor
 
-## 📦 Установка
+## 📦 Installation
 
 ```bash
-# Корень проекта
+# Project root
 npm install
 
 # Frontend
@@ -56,48 +56,48 @@ cd frontend && npm install && cd ..
 cd backend && pip install -r requirements.txt && cd ..
 ```
 
-## 🔧 Конфигурационные файлы
+## 🔧 Configuration Files
 
 ```
-корень проекта/
-├── .editorconfig              ← Базовые правила для всех файлов
-├── .markdownlint.json         ← Правила для Markdown
-├── package.json               ← lint-staged конфигурация
+project root/
+├── .editorconfig              ← Base rules for all files
+├── .markdownlint.json         ← Markdown rules
+├── package.json               ← lint-staged configuration
 ├── frontend/
-│   ├── .eslintrc.cjs          ← ESLint для JS/React
+│   ├── .eslintrc.cjs          ← ESLint for JS/React
 │   └── .prettierrc.json       ← Prettier (JS, JSON, CSS, MD, YAML)
 └── backend/
     ├── pyproject.toml         ← Black + isort
     └── .flake8                ← Flake8
 ```
 
-## 🚀 Использование
+## 🚀 Usage
 
-### Проверка всего проекта
+### Checking the Whole Project
 
 ```bash
-npm run lint              # Проверить всё (frontend + backend + markdown)
-npm run format            # Исправить всё автоматически
+npm run lint              # Check everything (frontend + backend + markdown)
+npm run format            # Fix everything automatically
 ```
 
-### По типам файлов
+### By File Type
 
 ```bash
 npm run frontend:lint     # JavaScript/React
-npm run frontend:format   # JavaScript/React автофикс
+npm run frontend:format   # JavaScript/React autofix
 
 npm run backend:lint      # Python
-npm run backend:format    # Python автофикс
+npm run backend:format    # Python autofix
 
-npm run lint:md           # Markdown проверка
-npm run lint:md:fix       # Markdown автофикс
+npm run lint:md           # Markdown check
+npm run lint:md:fix       # Markdown autofix
 ```
 
-## 🎭 Автоматический линтинг при коммите
+## 🎭 Automatic Linting on Commit
 
-При `git commit` автоматически запускается для **staged файлов**:
+On `git commit`, automatically runs for **staged files**:
 
-| Тип файла | Команды |
+| File type | Commands |
 |-----------|---------|
 | `*.{js,jsx}` | ESLint --fix → Prettier |
 | `*.{json,css}` | Prettier |
@@ -105,17 +105,17 @@ npm run lint:md:fix       # Markdown автофикс
 | `*.md` | markdownlint --fix |
 | `*.{yml,yaml}` | Prettier |
 
-## 🔥 Как добавить новый тип файлов
+## 🔥 How to Add a New File Type
 
-### Пример: Добавить HTML линтинг
+### Example: Add HTML Linting
 
-1. **Установите линтер:**
+1. **Install the linter:**
 
 ```bash
 npm install --save-dev htmlhint
 ```
 
-2. **Создайте конфиг** `.htmlhintrc`:
+2. **Create a config** `.htmlhintrc`:
 
 ```json
 {
@@ -130,7 +130,7 @@ npm install --save-dev htmlhint
 }
 ```
 
-3. **Добавьте в `package.json`**:
+3. **Add to `package.json`**:
 
 ```json
 {
@@ -143,15 +143,15 @@ npm install --save-dev htmlhint
 }
 ```
 
-### Пример: Добавить SQL линтинг
+### Example: Add SQL Linting
 
-1. **Установите:**
+1. **Install:**
 
 ```bash
 npm install --save-dev sql-lint
 ```
 
-2. **Добавьте в lint-staged:**
+2. **Add to lint-staged:**
 
 ```json
 {
@@ -161,21 +161,21 @@ npm install --save-dev sql-lint
 }
 ```
 
-### Пример: Добавить TypeScript
+### Example: Add TypeScript
 
-1. **Установите:**
+1. **Install:**
 
 ```bash
 cd frontend
 npm install --save-dev typescript @typescript-eslint/parser @typescript-eslint/eslint-plugin
 ```
 
-2. **Обновите `.eslintrc.cjs`:**
+2. **Update `.eslintrc.cjs`:**
 
 ```js
 module.exports = {
   extends: [
-    // ... существующие
+    // ... existing
     'plugin:@typescript-eslint/recommended',
   ],
   parser: '@typescript-eslint/parser',
@@ -184,7 +184,7 @@ module.exports = {
 };
 ```
 
-3. **Добавьте в lint-staged:**
+3. **Add to lint-staged:**
 
 ```json
 {
@@ -197,69 +197,69 @@ module.exports = {
 }
 ```
 
-## 🏗️ Архитектурные принципы
+## 🏗️ Architectural Principles
 
-### 1. **Единая конфигурация**
+### 1. **Single Configuration**
 
-- `.editorconfig` для базовых правил
-- Специализированные конфиги для каждого типа
+- `.editorconfig` for base rules
+- Specialized configs for each type
 
-### 2. **Автоматизация**
+### 2. **Automation**
 
-- Pre-commit hooks для всех типов
-- Только staged файлы проверяются
+- Pre-commit hooks for all types
+- Only staged files are checked
 
-### 3. **Расширяемость**
+### 3. **Extensibility**
 
-- Легко добавить новые типы файлов
-- Модульная структура lint-staged
+- Easy to add new file types
+- Modular lint-staged structure
 
-### 4. **Производительность**
+### 4. **Performance**
 
-- Параллельная обработка разных типов
-- Только изменённые файлы
+- Parallel processing of different types
+- Only changed files
 
-### 5. **Консистентность**
+### 5. **Consistency**
 
-- Prettier как единый форматтер где возможно
-- Специализированные линтеры для логики
+- Prettier as the single formatter where possible
+- Specialized linters for logic
 
-## 📋 Популярные линтеры по типам файлов
+## 📋 Popular Linters by File Type
 
-| Тип | Линтер | Автофикс | Установка |
+| Type | Linter | Autofix | Installation |
 |-----|--------|----------|-----------|
 | JavaScript/TypeScript | ESLint | ✅ | `eslint` |
 | Python | Black, isort, Flake8 | ✅/❌ | `pip install` |
 | Markdown | markdownlint | ✅ | `markdownlint-cli` |
-| JSON | Prettier | ✅ | встроено |
-| YAML | Prettier, yamllint | ✅ | встроено |
+| JSON | Prettier | ✅ | built-in |
+| YAML | Prettier, yamllint | ✅ | built-in |
 | CSS/SCSS | Stylelint, Prettier | ✅ | `stylelint` |
 | HTML | HTMLHint | ❌ | `htmlhint` |
 | SQL | sql-lint | ❌ | `sql-lint` |
-| Dockerfile | hadolint | ❌ | внешняя утилита |
-| Shell | shellcheck | ❌ | внешняя утилита |
+| Dockerfile | hadolint | ❌ | external tool |
+| Shell | shellcheck | ❌ | external tool |
 | Git commit | commitlint | ❌ | `@commitlint/cli` |
 
 ## ✅ Best Practices
 
-1. **Всегда используйте .editorconfig** - базовый слой для всех редакторов
-2. **Prettier для форматирования** - единый стиль где возможно
-3. **Специализированные линтеры для логики** - качество кода
-4. **Pre-commit hooks обязательны** - предотвращают проблемы
-5. **Документируйте конфигурацию** - команда должна понимать правила
+1. **Always use .editorconfig** - base layer for all editors
+2. **Prettier for formatting** - single style where possible
+3. **Specialized linters for logic** - code quality
+4. **Pre-commit hooks are mandatory** - prevent problems
+5. **Document the configuration** - the team must understand the rules
 
-## 🎓 Обучение команды
+## 🎓 Team Onboarding
 
-После настройки покажите команде:
+After setup, show the team:
 
 ```bash
-# Показать все доступные команды
+# Show all available commands
 npm run
 
-# Проверить конкретный файл
+# Check a specific file
 npx eslint frontend/src/App.jsx
 npx markdownlint README.md
 cd backend && black --check app/main.py
 ```
 
-Теперь ваш проект имеет **профессиональный уровень** линтинга всех типов файлов! 🚀
+Now your project has a **professional level** of linting for all file types! 🚀

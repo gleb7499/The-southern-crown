@@ -1,97 +1,97 @@
-# 🧪 Гайд по тестированию изменений в монорепозитории
+# 🧪 Guide to Testing Changes in the Monorepo
 
-Пошаговое руководство по тестированию изменений БД и backend'а отдельно от фронтенда.
+A step-by-step guide to testing database and backend changes separately from the frontend.
 
 ---
 
-## 📋 Порядок тестирования (снизу вверх)
+## 📋 Testing Order (Bottom-Up)
 
-### 1️⃣ Проверка Python кода (статика)
+### 1️⃣ Checking Python Code (Static)
 
 ```powershell
-# Переходим в backend
+# Go to backend
 cd c:\Users\kseni\Documents\Фриланс\The-southern-crown\backend
 
-# Проверяем синтаксис всех файлов
+# Check syntax of all files
 python -m py_compile app/models/*.py
 python -m py_compile app/schemas/*.py
 python -m py_compile app/api/*.py
 ```
 
-**Что проверяется**: Синтаксические ошибки, импорты, базовые типы  
-**Если ОК**: Нет вывода или "Compiled X files"  
-**Если ошибка**: Увидишь SyntaxError или ImportError
+**What is checked**: Syntax errors, imports, basic types  
+**If OK**: No output or "Compiled X files"  
+**If error**: You will see SyntaxError or ImportError
 
 ---
 
-### 2️⃣ Тестирование структуры БД
+### 2️⃣ Testing Database Structure
 
 ```powershell
-# Запускаем тест структуры БД
+# Run the database structure test
 python test_db.py
 ```
 
-**Что проверяется**:
+**What is checked**:
 
-- ✅ Создание всех таблиц (user, farm, control_point, growth_rate, report, camera)
-- ✅ Правильность полей в каждой таблице
-- ✅ Foreign keys и связи
+- ✅ All tables created (user, farm, control_point, growth_rate, report, camera)
+- ✅ Correct fields in each table
+- ✅ Foreign keys and relationships
 - ✅ SQLAlchemy relationships
 
-**Ожидаемый результат**:
+**Expected result**:
 
 ```
-🧪 ТЕСТИРОВАНИЕ СТРУКТУРЫ БАЗЫ ДАННЫХ
+🧪 DATABASE STRUCTURE TESTING
 ===================================================
-✅ Все таблицы созданы
-✅ Все relationships найдены
-🎉 ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ!
+✅ All tables created
+✅ All relationships found
+🎉 ALL CHECKS PASSED!
 ```
 
 ---
 
-### 3️⃣ Тестирование Pydantic схем
+### 3️⃣ Testing Pydantic Schemas
 
 ```powershell
-# Запускаем тест схем
+# Run the schema test
 python test_schemas.py
 ```
 
-**Что проверяется**:
+**What is checked**:
 
-- ✅ Валидация всех Create схем
-- ✅ Валидация всех Response схем
-- ✅ Правильность типов полей
-- ✅ Обязательные/опциональные поля
+- ✅ Validation of all Create schemas
+- ✅ Validation of all Response schemas
+- ✅ Correct field types
+- ✅ Required/optional fields
 
-**Ожидаемый результат**:
+**Expected result**:
 
 ```
-🧪 ТЕСТИРОВАНИЕ PYDANTIC СХЕМ
+🧪 PYDANTIC SCHEMA TESTING
 ===================================================
-✅ 10 схем пройдено, ❌ 0 провалено
-🎉 ВСЕ СХЕМЫ ПРОШЛИ ВАЛИДАЦИЮ!
+✅ 10 schemas passed, ❌ 0 failed
+🎉 ALL SCHEMAS PASSED VALIDATION!
 ```
 
 ---
 
-### 4️⃣ Создание БД с тестовыми данными
+### 4️⃣ Creating a Database with Test Data
 
 ```powershell
-# Удаляем старую БД (если есть)
+# Delete the old database (if any)
 Remove-Item southern_crown.db -ErrorAction SilentlyContinue
 
-# Создаем новую БД с seed данными
+# Create a new database with seed data
 python -m app.init_db
 ```
 
-**Что происходит**:
+**What happens**:
 
-- Создаются все таблицы
-- Создается admin пользователь (<admin@example.com> / admin123)
-- Создаются 3 фермы с точками контроля, камерами, growth_rates, reports
+- All tables are created
+- An admin user is created (<admin@example.com> / admin123)
+- 3 farms are created with control points, cameras, growth_rates, reports
 
-**Ожидаемый результат**:
+**Expected result**:
 
 ```
 Created admin user: admin@example.com / admin123
@@ -101,9 +101,9 @@ Database initialized successfully
 
 ---
 
-### 5️⃣ Просмотр БД (опционально)
+### 5️⃣ Viewing the Database (Optional)
 
-**Вариант A: Через Python**
+**Option A: Via Python**
 
 ```powershell
 python
@@ -114,38 +114,38 @@ import sqlite3
 conn = sqlite3.connect('southern_crown.db')
 cursor = conn.cursor()
 
-# Смотрим все таблицы
+# View all tables
 cursor.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
 
-# Смотрим фермы
+# View farms
 cursor.execute("SELECT * FROM farm").fetchall()
 
-# Смотрим точки контроля
+# View control points
 cursor.execute("SELECT * FROM control_point").fetchall()
 
 conn.close()
 exit()
 ```
 
-**Вариант B: Установить DB Browser for SQLite**
+**Option B: Install DB Browser for SQLite**
 
-- Скачать: <https://sqlitebrowser.org/>
-- Открыть файл `southern_crown.db`
-- Визуально посмотреть все таблицы и данные
+- Download: <https://sqlitebrowser.org/>
+- Open the `southern_crown.db` file
+- Visually inspect all tables and data
 
 ---
 
-### 6️⃣ Запуск backend сервера
+### 6️⃣ Starting the Backend Server
 
 ```powershell
-# Установить зависимости (если еще не установлены)
+# Install dependencies (if not already installed)
 pip install -r requirements.txt
 
-# Запустить сервер
+# Start the server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Ожидаемый результат**:
+**Expected result**:
 
 ```
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
@@ -155,13 +155,13 @@ INFO:     Started server process
 
 ---
 
-### 7️⃣ Тестирование API через Swagger UI
+### 7️⃣ Testing the API via Swagger UI
 
-1. **Открыть браузер**: <http://localhost:8000/docs>
-2. **Залогиниться**:
-   - Найти `POST /api/auth/login`
-   - Нажать "Try it out"
-   - Ввести:
+1. **Open browser**: <http://localhost:8000/docs>
+2. **Log in**:
+   - Find `POST /api/auth/login`
+   - Click "Try it out"
+   - Enter:
 
      ```json
      {
@@ -170,39 +170,39 @@ INFO:     Started server process
      }
      ```
 
-   - Нажать "Execute"
-   - Должен вернуться статус 200
+   - Click "Execute"
+   - It should return status 200
 
-3. **Проверить endpoints**:
-   - `GET /api/farms` - получить список ферм
-   - `GET /api/control-points/` - получить точки контроля
-   - `GET /api/cameras/` - получить камеры
+3. **Check endpoints**:
+   - `GET /api/farms` - get the list of farms
+   - `GET /api/control-points/` - get control points
+   - `GET /api/cameras/` - get cameras
 
-**Что тестируем**:
+**What we test**:
 
-- ✅ Аутентификация работает
-- ✅ API возвращает данные из БД
-- ✅ Связи работают (farm → control_points)
-- ✅ Pydantic валидация работает
+- ✅ Authentication works
+- ✅ API returns data from the database
+- ✅ Relationships work (farm → control_points)
+- ✅ Pydantic validation works
 
 ---
 
-### 8️⃣ Тестирование API через curl/PowerShell (альтернатива)
+### 8️⃣ Testing the API via curl/PowerShell (Alternative)
 
 ```powershell
-# Логин
+# Login
 $response = Invoke-WebRequest -Uri "http://localhost:8000/api/auth/login" `
   -Method POST `
   -ContentType "application/json" `
   -Body '{"email":"admin@example.com","password":"admin123"}' `
   -SessionVariable session
 
-# Получить фермы
+# Get farms
 Invoke-RestMethod -Uri "http://localhost:8000/api/farms" `
   -Method GET `
   -WebSession $session
 
-# Получить точки контроля
+# Get control points
 Invoke-RestMethod -Uri "http://localhost:8000/api/control-points/" `
   -Method GET `
   -WebSession $session
@@ -210,85 +210,85 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/control-points/" `
 
 ---
 
-### 9️⃣ Запуск через Docker (полный стек)
+### 9️⃣ Running via Docker (Full Stack)
 
 ```powershell
-# Вернуться в корень проекта
+# Return to the project root
 cd c:\Users\kseni\Documents\Фриланс\The-southern-crown
 
-# Остановить и удалить старые контейнеры
+# Stop and remove old containers
 docker compose down -v
 
-# Собрать и запустить
+# Build and start
 docker compose up --build
 ```
 
-**Что запускается**:
+**What starts**:
 
-- Backend на <http://localhost:8000>
-- Frontend на <http://localhost:5173>
+- Backend at <http://localhost:8000>
+- Frontend at <http://localhost:5173>
 
-**Тестирование**:
+**Testing**:
 
-1. Открыть <http://localhost:8000/docs> - проверить Swagger
-2. Открыть <http://localhost:5173> - проверить фронтенд
-
----
-
-## 🎯 Итоговый чеклист
-
-- [ ] Python код компилируется без ошибок
-- [ ] test_db.py проходит успешно
-- [ ] test_schemas.py проходит успешно
-- [ ] init_db.py создает БД без ошибок
-- [ ] Backend сервер запускается
-- [ ] Swagger UI показывает все endpoints
-- [ ] Login работает через Swagger
-- [ ] GET endpoints возвращают данные
-- [ ] Docker compose запускается (опционально)
-- [ ] Frontend подключается к backend (опционально)
+1. Open <http://localhost:8000/docs> - check Swagger
+2. Open <http://localhost:5173> - check the frontend
 
 ---
 
-## 🐛 Частые проблемы
+## 🎯 Final Checklist
+
+- [ ] Python code compiles without errors
+- [ ] test_db.py passes successfully
+- [ ] test_schemas.py passes successfully
+- [ ] init_db.py creates the database without errors
+- [ ] Backend server starts
+- [ ] Swagger UI shows all endpoints
+- [ ] Login works via Swagger
+- [ ] GET endpoints return data
+- [ ] Docker compose starts (optional)
+- [ ] Frontend connects to backend (optional)
+
+---
+
+## 🐛 Common Problems
 
 ### ModuleNotFoundError
 
 ```powershell
-# Установить зависимости
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### База данных заблокирована
+### Database is locked
 
 ```powershell
-# Остановить все процессы Python
-# Удалить файл БД
+# Stop all Python processes
+# Delete the database file
 Remove-Item southern_crown.db
-# Пересоздать
+# Recreate
 python -m app.init_db
 ```
 
-### Порт 8000 занят
+### Port 8000 is in use
 
 ```powershell
-# Найти процесс
+# Find the process
 netstat -ano | findstr :8000
-# Убить процесс (замените PID)
-taskkill /PID <номер_процесса> /F
+# Kill the process (replace PID)
+taskkill /PID <process_id> /F
 ```
 
 ---
 
-## 💡 Советы
+## 💡 Tips
 
-1. **Тестируй снизу вверх**: БД → Схемы → API → Фронтенд
-2. **Не запускай фронтенд**, пока backend не работает
-3. **Используй Swagger UI** - это самый быстрый способ проверить API
-4. **Проверяй логи** - они покажут, где ошибка
-5. **Делай коммиты** после каждого успешного этапа
+1. **Test bottom-up**: Database → Schemas → API → Frontend
+2. **Do not start the frontend** until the backend works
+3. **Use Swagger UI** - it is the fastest way to test the API
+4. **Check the logs** - they will show where the error is
+5. **Make commits** after each successful step
 
 ---
 
-**Автор**: AI Assistant  
-**Дата**: 23 декабря 2025
+**Author**: AI Assistant  
+**Date**: December 23, 2025

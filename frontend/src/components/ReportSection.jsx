@@ -19,7 +19,7 @@ export default function ReportSection({ controlPointId, controlPointName }) {
       setLoading(true);
       setError(null);
 
-      // Используем относительный путь чтобы работал прокси Vite
+      // Use a relative path so the Vite proxy works
       const response = await fetch(`/api/reports/?control_point_id=${cpId}`, {
         method: 'GET',
         credentials: 'include',
@@ -34,7 +34,7 @@ export default function ReportSection({ controlPointId, controlPointName }) {
 
       const data = await response.json();
 
-      // Сортируем отчеты по дате (новые в конце)
+      // Sort reports by date (newest last)
       const sortedReports = (data || []).sort((a, b) => new Date(a.date) - new Date(b.date));
       setReports(sortedReports);
     } catch (err) {
@@ -45,7 +45,7 @@ export default function ReportSection({ controlPointId, controlPointName }) {
     }
   };
 
-  // Берём последний отчет (сегодняшний)
+  // Take the latest report (today's)
   const todayReport = reports.length > 0 ? reports[reports.length - 1] : null;
 
   if (!controlPointId) {

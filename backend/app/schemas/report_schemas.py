@@ -4,12 +4,12 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
-# === Схемы для CRUD операций ===
+# === Schemas for CRUD operations ===
 class ReportBase(BaseModel):
     farm_id: int
     control_point_id: int
     date: date
-    gram: int = Field(..., gt=0, description="Вес в граммах (должен быть положительным)")
+    gram: int = Field(..., gt=0, description="Weight in grams (must be positive)")
 
 
 class ReportCreate(ReportBase):
@@ -23,9 +23,9 @@ class Report(ReportBase):
         from_attributes = True
 
 
-# === Схемы для статистики ===
+# === Schemas for statistics ===
 class ReportStatistics(BaseModel):
-    """Статистика по отчетам для контрольной точки"""
+    """Report statistics for a control point"""
 
     control_point_id: int
     control_point_name: str
@@ -41,17 +41,17 @@ class ReportStatistics(BaseModel):
 
 
 class StatisticsRequest(BaseModel):
-    """Запрос статистики с фильтрами"""
+    """Statistics request with filters"""
 
-    farm_ids: Optional[List[int]] = Field(None, description="Список ID ферм для фильтрации")
-    control_point_ids: Optional[List[int]] = Field(None, description="Список ID точек контроля")
-    date_from: Optional[date] = Field(None, description="Начальная дата периода")
-    date_to: Optional[date] = Field(None, description="Конечная дата периода")
+    farm_ids: Optional[List[int]] = Field(None, description="List of farm IDs for filtering")
+    control_point_ids: Optional[List[int]] = Field(None, description="List of control point IDs")
+    date_from: Optional[date] = Field(None, description="Period start date")
+    date_to: Optional[date] = Field(None, description="Period end date")
 
 
-# === Схемы для генерации отчетов (графики) ===
+# === Schemas for report generation (charts) ===
 class ChartData(BaseModel):
-    """Данные для графика"""
+    """Chart data"""
 
     control_point_name: str
     days: List[int]
@@ -59,7 +59,7 @@ class ChartData(BaseModel):
 
 
 class ReportRequest(BaseModel):
-    """Запрос на генерацию отчета с графиками"""
+    """Request for report generation with charts"""
 
     farm_ids: List[int]
     control_point_ids: List[int]
@@ -69,7 +69,7 @@ class ReportRequest(BaseModel):
 
 
 class ReportResponse(BaseModel):
-    """Ответ с данными для графиков"""
+    """Response with chart data"""
 
     charts: List[ChartData]
     overall_deviation: ChartData

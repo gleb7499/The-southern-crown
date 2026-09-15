@@ -1,13 +1,13 @@
 """
-Скрипт для тестирования Pydantic схем
-Запуск: python test_schemas.py
+Script for testing Pydantic schemas
+Run: python test_schemas.py
 """
 
 import sys
 from datetime import date
 from pathlib import Path
 
-# Добавляем backend в путь
+# Add backend to the path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from app.schemas.auth import LoginRequest, UserResponse
@@ -19,21 +19,21 @@ from app.schemas.report_schema import Report, ReportCreate
 
 
 def test_schema(schema_name, schema_class, test_data):
-    """Тестирует одну Pydantic схему"""
+    """Tests a single Pydantic schema"""
     print(f"   Testing {schema_name}...")
     try:
         instance = schema_class(**test_data)
-        print(f"      ✅ {schema_name} валидация пройдена")
-        print(f"         Данные: {instance.model_dump()}")
+        print(f"      ✅ {schema_name} validation passed")
+        print(f"         Data: {instance.model_dump()}")
         return True
     except Exception as e:
-        print(f"      ❌ {schema_name} ошибка: {e}")
+        print(f"      ❌ {schema_name} error: {e}")
         return False
 
 
 def test_all_schemas():
-    """Тестирует все Pydantic схемы"""
-    print("🧪 Проверка Pydantic схем...\n")
+    """Tests all Pydantic schemas"""
+    print("🧪 Checking Pydantic schemas...\n")
 
     tests = [
         ("FarmCreate", FarmCreate, {"name": "Тестовая ферма"}),
@@ -95,13 +95,13 @@ def test_all_schemas():
         else:
             failed += 1
 
-    print(f"\n📊 Результаты: ✅ {passed} пройдено, ❌ {failed} провалено")
+    print(f"\n📊 Results: ✅ {passed} passed, ❌ {failed} failed")
     return failed == 0
 
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("🧪 ТЕСТИРОВАНИЕ PYDANTIC СХЕМ")
+    print("🧪 PYDANTIC SCHEMA TESTING")
     print("=" * 60 + "\n")
 
     try:
@@ -109,13 +109,13 @@ if __name__ == "__main__":
 
         print("\n" + "=" * 60)
         if success:
-            print("🎉 ВСЕ СХЕМЫ ПРОШЛИ ВАЛИДАЦИЮ!")
+            print("🎉 ALL SCHEMAS PASSED VALIDATION!")
         else:
-            print("⚠️ НЕКОТОРЫЕ СХЕМЫ НЕ ПРОШЛИ ВАЛИДАЦИЮ")
+            print("⚠️ SOME SCHEMAS FAILED VALIDATION")
         print("=" * 60)
 
     except Exception as e:
-        print(f"\n❌ КРИТИЧЕСКАЯ ОШИБКА: {e}")
+        print(f"\n❌ CRITICAL ERROR: {e}")
         import traceback
 
         traceback.print_exc()

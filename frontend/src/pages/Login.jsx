@@ -29,7 +29,7 @@ export default function Login() {
       return;
     }
 
-    // Требование клиента: показываем конкретную ошибку для email без домена.
+    // Client requirement: show a specific error for an email without a domain.
     if (!isEmailWithDomain(normalizedEmail)) {
       setErrorMessage('Неверный формат почты: отсутствует домен.');
       setShowErrorModal(true);

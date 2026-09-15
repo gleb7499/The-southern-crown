@@ -8,30 +8,30 @@ from app.tasks.video_recording import record_all_cameras
 
 logger = logging.getLogger(__name__)
 
-# Создаем планировщик
-# BackgroundScheduler выполняет задачи в фоновых потоках,
-# не блокируя основной поток FastAPI
+# Create the scheduler
+# BackgroundScheduler runs tasks in background threads,
+# without blocking the main FastAPI thread
 scheduler = BackgroundScheduler(timezone=timezone("Europe/Moscow"))
 
 
 def parse_schedule_times(schedule_str: str) -> list:
-    """Парсит строку расписания в список времени (HH:MM)"""
+    """Parse the schedule string into a list of times (HH:MM)"""
     return [time.strip() for time in schedule_str.split(",")]
 
 
 def configure_scheduled_jobs():
-    """Настраивает периодические задачи на основе конфигурации"""
+    """Configure periodic tasks based on the configuration"""
     schedule_times = parse_schedule_times(settings.VIDEO_RECORDING_SCHEDULE)
 
     for idx, time_str in enumerate(schedule_times):
         try:
             hour, minute = map(int, time_str.split(":"))
-            # BackgroundScheduler не поддерживает async функции напрямую,
-            # поэтому оборачиваем в sync функцию, которая запускает async
+            # BackgroundScheduler does not support async functions directly,
+            # so we wrap them in a sync function that runs the async one
             import asyncio
 
             def run_async_task():
-                """Обертка для запуска async задачи в синхронном контексте"""
+                """Wrapper for running an async task in a sync context"""
                 try:
                     loop = asyncio.get_event_loop()
                 except RuntimeError:
@@ -54,10 +54,10 @@ def configure_scheduled_jobs():
 
 def start_scheduler():
     """
-    Запускает планировщик в фоновом режиме.
+    Start the scheduler in background mode.
     
-    Задачи будут выполняться в отдельных потоках,
-    не блокируя работу FastAPI сервера.
+    Tasks will run in separate threads,
+    without blocking the FastAPI server.
     """
     if not scheduler.running:
         configure_scheduled_jobs()
@@ -66,7 +66,7 @@ def start_scheduler():
 
 
 def shutdown_scheduler():
-    """Останавливает планировщик"""
+    """Stop the scheduler"""
     if scheduler.running:
         scheduler.shutdown()
         logger.info("Планировщик задач остановлен")

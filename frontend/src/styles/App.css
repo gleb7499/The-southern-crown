@@ -38,7 +38,7 @@ body {
   width: min(400px, 92vw);
 }
 
-/* На странице входа кнопка должна совпадать с шириной инпутов */
+/* On the login page the button must match the width of the inputs */
 .login-box .btn,
 .login-box .btn-primary,
 .login-box .btn-dark,
@@ -831,7 +831,7 @@ body {
   color: #000000;
 }
 
-/* Chart controls: inputs/selects должны быть той же высоты, что и кнопка */
+/* Chart controls: inputs/selects must be the same height as the button */
 .chart-controls .filter-select,
 .chart-controls .filter-input,
 .chart-controls .btn {
@@ -847,7 +847,7 @@ body {
   box-shadow: 0 0 0 3px rgba(23, 103, 47, 0.1);
 }
 
-/* Dropdown calendar (Дата) */
+/* Dropdown calendar (Date) */
 .date-dropdown {
   position: relative;
 }
@@ -1577,7 +1577,7 @@ body {
   justify-content: center;
 }
 
-/* Адаптивные стили для узких экранов */
+/* Responsive styles for narrow screens */
 @media (max-width: 1024px) {
   .growth-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));

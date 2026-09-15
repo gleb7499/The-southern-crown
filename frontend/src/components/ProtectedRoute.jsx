@@ -3,25 +3,25 @@ import { useAuth } from '../hooks/useAuth';
 import Loading from './Loading';
 
 /**
- * Компонент-обертка для защищенных маршрутов
- * Проверяет аутентификацию пользователя перед рендерингом дочерних компонентов
- * Если пользователь не залогинен - редирект на /login
- * @param {Object} props - children: компоненты для рендеринга при успешной аутентификации
+ * Wrapper component for protected routes
+ * Checks user authentication before rendering child components
+ * If the user is not logged in - redirect to /login
+ * @param {Object} props - children: components to render on successful authentication
  */
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // Показываем загрузку пока проверяем аутентификацию
+  // Show loading while checking authentication
   if (isLoading) {
     return <Loading />;
   }
 
-  // Если не аутентифицирован - редирект на логин
+  // If not authenticated - redirect to login
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Если аутентифицирован - рендерим защищенный контент
+  // If authenticated - render the protected content
   return children;
 };
 

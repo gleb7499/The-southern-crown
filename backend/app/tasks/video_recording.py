@@ -17,37 +17,37 @@ logger = logging.getLogger(__name__)
 
 def record_video_from_camera(camera: Camera, duration: int, output_dir: Path) -> Optional[str]:
     """
-    Записывает видео с камеры используя ffmpeg.
+    Records video from a camera using ffmpeg.
 
     Args:
-        camera: Объект камеры из БД
-        duration: Длительность записи в секундах
-        output_dir: Директория для сохранения записи
+        camera: Camera object from the database
+        duration: Recording duration in seconds
+        output_dir: Directory for saving the recording
 
     Returns:
-        Путь к сохраненному файлу или None в случае ошибки
+        Path to the saved file or None on error
     """
-    # Создаем директорию если её нет
+    # Create the directory if it does not exist
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Генерируем имя файла: camera_id_timestamp.mp4
+    # Generate the file name: camera_id_timestamp.mp4
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"camera_{camera.id}_{timestamp}.mp4"
     output_path = output_dir / filename
 
-    # Определяем параметры для ffmpeg в зависимости от типа камеры
-    # Можно расширить логику определения типа камеры
+    # Determine ffmpeg parameters depending on the camera type
+    # The camera type detection logic can be extended
     input_prefix = "-rtsp_transport tcp"
     
-    # Команда ffmpeg для записи
+    # ffmpeg command for recording
     cmd = [
         "ffmpeg",
-        "-y",  # Перезаписать файл если существует
+        "-y",  # Overwrite the file if it exists
         "-rtsp_transport", "tcp",
         "-i", camera.url,
-        "-t", str(duration),  # Длительность записи
-        "-c:v", "copy",  # Копировать видео кодек без перекодирования
-        "-c:a", "aac",  # Аудио кодек
+        "-t", str(duration),  # Recording duration
+        "-c:v", "copy",  # Copy the video codec without re-encoding
+        "-c:a", "aac",  # Audio codec
         "-f", "mp4",
         str(output_path),
     ]
@@ -56,12 +56,12 @@ def record_video_from_camera(camera: Camera, duration: int, output_dir: Path) ->
         logger.info(f"Начинаю запись с камеры {camera.id} ({camera.name}) на {duration} секунд")
         logger.debug(f"Команда ffmpeg: {' '.join(cmd)}")
 
-        # Запускаем ffmpeg
+        # Run ffmpeg
         result = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=duration + 30,  # Таймаут с запасом
+            timeout=duration + 30,  # Timeout with a margin
         )
 
         if result.returncode == 0:
@@ -82,18 +82,18 @@ def record_video_from_camera(camera: Camera, duration: int, output_dir: Path) ->
 
 async def record_all_cameras():
     """
-    Периодическая задача для записи видео со всех камер из БД.
+    Periodic task to record video from all cameras in the database.
     
-    Все камеры начинают запись одновременно (параллельно),
-    а не последовательно.
+    All cameras start recording simultaneously (in parallel),
+    rather than sequentially.
 
-    Эта задача запускается по расписанию из APScheduler.
+    This task is launched on a schedule by APScheduler.
     """
     logger.info("Запуск задачи записи видео со всех камер (параллельное выполнение)")
     
     async with AsyncSessionLocal() as db:
         try:
-            # Получаем все камеры из БД
+            # Get all cameras from the database
             result = await db.execute(select(Camera))
             cameras: List[Camera] = result.scalars().all()
             
@@ -101,19 +101,19 @@ async def record_all_cameras():
                 logger.warning("В базе данных нет камер для записи")
                 return {"status": "no_cameras", "recorded": 0}
 
-            # Создаем директорию для записей
+            # Create the directory for recordings
             recording_path = Path(settings.VIDEO_RECORDING_PATH)
             recording_path.mkdir(parents=True, exist_ok=True)
 
-            # Записываем видео со всех камер параллельно
+            # Record video from all cameras in parallel
             recorded_count = 0
             failed_count = 0
             results = []
 
-            # Используем ThreadPoolExecutor для параллельного выполнения
-            # Максимальное количество одновременных записей ограничено количеством камер
+            # Use ThreadPoolExecutor for parallel execution
+            # The maximum number of simultaneous recordings is limited by the number of cameras
             with ThreadPoolExecutor(max_workers=len(cameras)) as executor:
-                # Запускаем запись со всех камер одновременно
+                # Start recording from all cameras simultaneously
                 future_to_camera = {
                     executor.submit(
                         record_video_from_camera,
@@ -124,7 +124,7 @@ async def record_all_cameras():
                     for camera in cameras
                 }
 
-                # Обрабатываем результаты по мере завершения записей
+                # Process results as recordings complete
                 for future in as_completed(future_to_camera):
                     camera = future_to_camera[future]
                     try:

@@ -1,8 +1,8 @@
 """
-Утилита для инициализации базы данных (async версия).
+Utility for database initialization (async version).
 
-Используется для ручной инициализации БД или создания тестовых данных.
-В основном приложении инициализация происходит автоматически в main.py.
+Used for manual database initialization or creating test data.
+In the main application, initialization happens automatically in main.py.
 """
 import asyncio
 import logging
@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 
 
 async def init_test_data():
-    """Инициализация тестовых данных (фермы, точки контроля, камеры и т.д.)"""
+    """Initialize test data (farms, control points, cameras, etc.)"""
     async with AsyncSessionLocal() as db:
         try:
-            # Проверяем, есть ли уже фермы
+            # Check if farms already exist
             result = await db.execute(select(Farm))
             farms = result.scalars().all()
             
@@ -47,9 +47,9 @@ async def init_test_data():
                 db.add(farm)
                 await db.flush()
 
-                # Добавляем точки контроля для каждой фермы (3 корпуса на ферму)
+                # Add control points for each farm (3 buildings per farm)
                 for i in range(1, 4):
-                    # Добавляем точки контроля для каждого корпуса
+                    # Add control points for each building
                     for j in range(1, 3):
                         control_point = ControlPoint(
                             name=f"Точка {j}", frame_name=f"Корпус {i}", farm_id=farm.id
@@ -57,7 +57,7 @@ async def init_test_data():
                         db.add(control_point)
                         await db.flush()
 
-                        # Добавляем тестовые камеры к точкам контроля
+                        # Add test cameras to the control points
                         for k in range(1, 3):
                             camera = Camera(
                                 name=f"Камера {k}",
@@ -67,11 +67,11 @@ async def init_test_data():
                             )
                             db.add(camera)
 
-                        # Добавляем тестовые данные норм развития
+                        # Add test growth rate data
                         landing_date = date.today() - timedelta(days=15)
                         initial_weight = 45 + (j * 5)
                         
-                        # Создаем уникальный seed для каждой точки контроля для воспроизводимости
+                        # Create a unique seed for each control point for reproducibility
                         random.seed(farm.id * 100 + i * 10 + j)
                         
                         growth_rate = GrowthRate(
@@ -85,21 +85,21 @@ async def init_test_data():
                         )
                         db.add(growth_rate)
 
-                        # Генерируем отчеты на разные даты с вариативностью весов
-                        # Создаем отчеты примерно каждые 2-3 дня
+                        # Generate reports on different dates with weight variability
+                        # Create reports roughly every 2-3 days
                         reports_data = []
                         
-                        # Отчет на дату посадки (начальный вес)
+                        # Report on the landing date (initial weight)
                         reports_data.append({
                             'date': landing_date,
                             'gram': initial_weight
                         })
                         
-                        # Генерируем отчеты на промежуточные дни
+                        # Generate reports for intermediate days
                         days_since_landing = 0
-                        target_weight = 1200 + (j * 50) + random.randint(-30, 30)  # Целевой вес с вариацией
+                        target_weight = 1200 + (j * 50) + random.randint(-30, 30)  # Target weight with variation
                         
-                        # Создаем отчеты каждые 2-3 дня
+                        # Create reports every 2-3 days
                         while days_since_landing < 15:
                             days_since_landing += random.randint(2, 3)
                             if days_since_landing >= 15:
@@ -107,16 +107,16 @@ async def init_test_data():
                             
                             report_date = landing_date + timedelta(days=days_since_landing)
                             
-                            # Вычисляем вес с учетом роста и вариативности
-                            # Рост примерно линейный с небольшими отклонениями
+                            # Calculate the weight accounting for growth and variability
+                            # Growth is roughly linear with small deviations
                             progress = days_since_landing / 15.0
                             base_weight = initial_weight + (target_weight - initial_weight) * progress
                             
-                            # Добавляем случайное отклонение (±3-5% для реалистичности)
+                            # Add random deviation (±3-5% for realism)
                             variation = random.uniform(-0.05, 0.05)
                             weight = int(base_weight * (1 + variation))
                             
-                            # Ограничиваем минимальный и максимальный вес
+                            # Clamp the minimum and maximum weight
                             min_weight = initial_weight
                             max_weight = target_weight + 50
                             weight = max(min_weight, min(max_weight, weight))
@@ -126,7 +126,7 @@ async def init_test_data():
                                 'gram': weight
                             })
                         
-                        # Создаем отчеты в базе данных
+                        # Create the reports in the database
                         for report_data in reports_data:
                             report = Report(
                                 farm_id=farm.id,
@@ -152,12 +152,12 @@ async def init_test_data():
 
 
 async def init_db():
-    """Инициализация базы данных с тестовыми данными (для ручного запуска)"""
-    # Создаем таблицы
+    """Initialize the database with test data (for manual runs)"""
+    # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
-    # Создаем тестовые данные
+    # Create test data
     await init_test_data()
 
 

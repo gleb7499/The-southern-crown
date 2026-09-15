@@ -3,8 +3,8 @@ from sqlalchemy.orm import declarative_base
 
 from app.core.config import settings
 
-# Создаем async engine
-# Для asyncpg используем postgresql+asyncpg://
+# Create the async engine
+# For asyncpg we use postgresql+asyncpg://
 database_url = settings.DATABASE_URL
 if database_url.startswith("postgresql://"):
     database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
@@ -15,7 +15,7 @@ engine = create_async_engine(
     future=True,
 )
 
-# Создаем async session factory
+# Create the async session factory
 AsyncSessionLocal = async_sessionmaker(
     engine,
     class_=AsyncSession,
@@ -28,7 +28,7 @@ Base = declarative_base()
 
 
 async def get_db() -> AsyncSession:
-    """Получить async сессию БД"""
+    """Get an async DB session"""
     async with AsyncSessionLocal() as session:
         try:
             yield session

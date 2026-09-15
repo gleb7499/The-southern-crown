@@ -8,14 +8,14 @@ const api = axios.create({
   },
 });
 
-// Interceptor для обработки ошибок аутентификации
-// При 401 редиректим на /login (кроме самого запроса логина)
+// Interceptor for handling authentication errors
+// On 401 redirect to /login (except the login request itself)
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const isLoginRequest = error.config?.url?.includes('/auth/login');
 
-    // При истечении access_token (401) редиректим на страницу логина
+    // When the access_token expires (401) redirect to the login page
     if (error.response?.status === 401 && !isLoginRequest) {
       window.location.href = '/login';
     }

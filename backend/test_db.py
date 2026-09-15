@@ -1,12 +1,12 @@
 """
-Скрипт для тестирования структуры БД
-Запуск: python test_db.py
+Script for testing the database structure
+Run: python test_db.py
 """
 
 import sys
 from pathlib import Path
 
-# Добавляем backend в путь
+# Add backend to the path
 sys.path.insert(0, str(Path(__file__).parent))
 
 import sqlite3
@@ -21,16 +21,16 @@ from app.models.user import User
 
 
 def test_database_structure():
-    """Тестирует создание таблиц и их структуру"""
-    print("🔍 Проверка структуры базы данных...\n")
+    """Tests table creation and their structure"""
+    print("🔍 Checking database structure...\n")
 
-    # Создаем таблицы
-    print("1. Создание таблиц...")
+    # Create tables
+    print("1. Creating tables...")
     Base.metadata.create_all(bind=engine)
-    print("   ✅ Таблицы созданы\n")
+    print("   ✅ Tables created\n")
 
-    # Проверяем существование таблиц
-    print("2. Проверка существования таблиц:")
+    # Check that tables exist
+    print("2. Checking that tables exist:")
     conn = sqlite3.connect("southern_crown.db")
     cursor = conn.cursor()
 
@@ -44,12 +44,12 @@ def test_database_structure():
         if table in found_tables:
             print(f"   ✅ {table}")
         else:
-            print(f"   ❌ {table} - НЕ НАЙДЕНА!")
+            print(f"   ❌ {table} - NOT FOUND!")
 
-    print("\n3. Структура таблиц:")
+    print("\n3. Table structure:")
     for table in expected_tables:
         if table in found_tables:
-            print(f"\n   📊 Таблица: {table}")
+            print(f"\n   📊 Table: {table}")
             cursor.execute(f"PRAGMA table_info({table});")
             columns = cursor.fetchall()
             for col in columns:
@@ -58,8 +58,8 @@ def test_database_structure():
                 null_mark = " NOT NULL" if not_null else ""
                 print(f"      - {name}: {col_type}{pk_mark}{null_mark}")
 
-    # Проверяем foreign keys
-    print("\n4. Проверка связей (Foreign Keys):")
+    # Check foreign keys
+    print("\n4. Checking relationships (Foreign Keys):")
     for table in ["control_point", "growth_rate", "report", "camera"]:
         if table in found_tables:
             cursor.execute(f"PRAGMA foreign_key_list({table});")
@@ -71,14 +71,14 @@ def test_database_structure():
                     print(f"      {from_col} → {ref_table}.{to_col} (on delete: {on_delete})")
 
     conn.close()
-    print("\n✅ Проверка структуры БД завершена!")
+    print("\n✅ Database structure check completed!")
 
 
 def test_relationships():
-    """Тестирует relationships между моделями"""
-    print("\n🔗 Проверка relationships в моделях...\n")
+    """Tests relationships between models"""
+    print("\n🔗 Checking model relationships...\n")
 
-    # Проверяем атрибуты relationships
+    # Check relationship attributes
     checks = [
         ("Farm", Farm, ["control_points", "growth_rates", "reports"]),
         ("ControlPoint", ControlPoint, ["farm", "cameras", "growth_rates", "reports"]),
@@ -93,14 +93,14 @@ def test_relationships():
             if hasattr(model_class, rel):
                 print(f"      ✅ {rel}")
             else:
-                print(f"      ❌ {rel} - НЕ НАЙДЕН!")
+                print(f"      ❌ {rel} - NOT FOUND!")
 
-    print("\n✅ Проверка relationships завершена!")
+    print("\n✅ Relationship check completed!")
 
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("🧪 ТЕСТИРОВАНИЕ СТРУКТУРЫ БАЗЫ ДАННЫХ")
+    print("🧪 DATABASE STRUCTURE TESTING")
     print("=" * 60 + "\n")
 
     try:
@@ -108,11 +108,11 @@ if __name__ == "__main__":
         test_relationships()
 
         print("\n" + "=" * 60)
-        print("🎉 ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ!")
+        print("🎉 ALL CHECKS PASSED!")
         print("=" * 60)
 
     except Exception as e:
-        print(f"\n❌ ОШИБКА: {e}")
+        print(f"\n❌ ERROR: {e}")
         import traceback
 
         traceback.print_exc()

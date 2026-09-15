@@ -30,11 +30,11 @@ async def get_control_points(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Получить список точек контроля с опциональной фильтрацией и пагинацией.
+    Get the list of control points with optional filtering and pagination.
 
-    - **farm_ids**: Список ID ферм через запятую для фильтрации
-    - **skip**: Количество записей для пропуска (пагинация)
-    - **limit**: Максимальное количество возвращаемых записей (пагинация)
+    - **farm_ids**: Comma-separated list of farm IDs for filtering
+    - **skip**: Number of records to skip (pagination)
+    - **limit**: Maximum number of records to return (pagination)
     """
     query = (
         select(ControlPointModel, Farm.name.label("farm_name"))
@@ -79,9 +79,9 @@ async def create_control_point(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Создать новую точку контроля.
+    Create a new control point.
 
-    Требуется существующий farm_id в базе данных.
+    An existing farm_id in the database is required.
     """
     # Verify farm exists
     farm_result = await db.execute(select(Farm).filter(Farm.id == control_point.farm_id))
@@ -106,10 +106,10 @@ async def create_control_point_full(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Создать новую точку контроля вместе с фермой, если она не существует.
+    Create a new control point together with the farm, if it does not exist.
 
-    Этот endpoint предназначен для страницы Настроек, где пользователи могут создать
-    полную структуру, указав только названия.
+    This endpoint is intended for the Settings page, where users can create
+    the full structure by providing only names.
     """
     # Check if admin
     if not current_user.is_admin:
@@ -142,7 +142,7 @@ async def get_control_point(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Получить конкретную точку контроля по ID."""
+    """Get a specific control point by ID."""
     result = await db.execute(
         select(ControlPointModel).filter(ControlPointModel.id == control_point_id)
     )

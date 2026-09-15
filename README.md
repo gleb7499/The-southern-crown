@@ -1,63 +1,63 @@
-# The Southern Crown - Административная панель
+# The Southern Crown - Admin Panel
 
-Административная панель с FastAPI бэкендом и React фронтендом для управления фермами, корпусами, точками контроля и камерами.
+Admin panel with a FastAPI backend and a React frontend for managing farms, buildings, control points, and cameras.
 
-## Технологический стек
+## Tech Stack
 
 ### Backend
 
-- **FastAPI** - современный веб-фреймворк для Python
-- **SQLAlchemy** - ORM для работы с базой данных
-- **SQLite** - база данных (легко заменяется на PostgreSQL)
-- **JWT** - аутентификация через токены
-- **Pydantic** - валидация данных
+- **FastAPI** - modern Python web framework
+- **SQLAlchemy** - ORM for database access
+- **SQLite** - database (easily replaced with PostgreSQL)
+- **JWT** - token-based authentication
+- **Pydantic** - data validation
 
 ### Frontend
 
-- **React 18** - UI библиотека
-- **Vite** - сборщик и dev-сервер
-- **React Router** - маршрутизация
-- **Axios** - HTTP клиент
+- **React 18** - UI library
+- **Vite** - bundler and dev server
+- **React Router** - routing
+- **Axios** - HTTP client
 
-### Инфраструктура
+### Infrastructure
 
-- **Docker & Docker Compose** - контейнеризация
-- **Nginx** - опционально для продакшена
+- **Docker & Docker Compose** - containerization
+- **Nginx** - optional, for production
 
-## Быстрый старт
+## Quick Start
 
-### Предварительные требования
+### Prerequisites
 
-- Docker и Docker Compose установлены
-- Порты 8000 и 5173 свободны
+- Docker and Docker Compose installed
+- Ports 8000 and 5173 available
 
-### Запуск проекта
+### Running the Project
 
-1. Клонируйте репозиторий:
+1. Clone the repository:
 
 ```bash
 git clone https://github.com/gleb7499/The-southern-crown.git
 cd The-southern-crown
 ```
 
-2. Запустите проект через Docker Compose:
+2. Start the project with Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-3. Откройте браузер:
+3. Open in browser:
 
-- Фронтенд: <http://localhost:5173>
+- Frontend: <http://localhost:5173>
 - Backend API: <http://localhost:8000>
-- API документация: <http://localhost:8000/docs>
+- API documentation: <http://localhost:8000/docs>
 
-### Данные для входа
+### Login Credentials
 
 **Email:** <admin@example.com>  
-**Пароль:** admin123
+**Password:** admin123
 
-## Структура проекта
+## Project Structure
 
 ```text
 The-southern-crown/
@@ -70,28 +70,28 @@ The-southern-crown/
 │   │   │   ├── farms.py
 │   │   │   ├── reports.py
 │   │   │   └── deps.py
-│   │   ├── core/         # Конфигурация и утилиты
+│   │   ├── core/         # Configuration and utilities
 │   │   │   ├── config.py
 │   │   │   ├── database.py
 │   │   │   └── security.py
-│   │   ├── middleware/   # Middleware для безопасности
+│   │   ├── middleware/   # Security middleware
 │   │   │   └── security.py
-│   │   ├── models/       # SQLAlchemy модели
+│   │   ├── models/       # SQLAlchemy models
 │   │   │   ├── user.py
 │   │   │   ├── farm.py
 │   │   │   └── camera.py
-│   │   ├── schemas/      # Pydantic схемы
+│   │   ├── schemas/      # Pydantic schemas
 │   │   │   ├── auth.py
 │   │   │   ├── farm.py
 │   │   │   ├── camera.py
 │   │   │   └── report.py
-│   │   ├── main.py       # FastAPI приложение
-│   │   └── init_db.py    # Инициализация БД
+│   │   ├── main.py       # FastAPI application
+│   │   └── init_db.py    # Database initialization
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── components/   # React компоненты
+│   │   ├── components/   # React components
 │   │   │   ├── Modal.jsx
 │   │   │   ├── AlertModal.jsx
 │   │   │   ├── CalendarModal.jsx
@@ -102,14 +102,14 @@ The-southern-crown/
 │   │   │   ├── Loading.jsx
 │   │   │   ├── Layout.jsx
 │   │   │   └── Sidebar.jsx
-│   │   ├── pages/        # Страницы
+│   │   ├── pages/        # Pages
 │   │   │   ├── Login.jsx
 │   │   │   ├── General.jsx
 │   │   │   ├── Reports.jsx
 │   │   │   └── Settings.jsx
-│   │   ├── services/     # API клиенты
+│   │   ├── services/     # API clients
 │   │   │   └── api.js
-│   │   ├── styles/       # CSS стили
+│   │   ├── styles/       # CSS styles
 │   │   │   └── App.css
 │   │   ├── App.jsx
 │   │   └── main.jsx
@@ -119,112 +119,122 @@ The-southern-crown/
 └── docker-compose.yml
 ```
 
-## Функциональность
+## Screenshots
 
-### 1. Авторизация
+![Login page](images/login.png)
 
-- **JWT access токен** в HttpOnly cookies (срок жизни 24 часа)
-- Автоматический редирект на `/login` при истечении токена (401)
-- Модальное окно с ошибкой при неверных данных
-- Простая и надежная архитектура без refresh токенов
+![General section](images/general.png)
 
-### 2. Раздел "Общее"
+![Reports section](images/reports.png)
 
-- Фильтрация по ферме, корпусу, точке контроля (множественный выбор)
-- Отображение карточек с параметрами точек
-- Красная модалка-алерт при критических событиях
-- Поля ввода для основных параметров
+![Settings section](images/settings.png)
 
-### 3. Раздел "Отчёты"
+## Features
 
-- Горизонтальные фильтры
-- Выбор показателя (средний вес, %, единобразие, стандартное отклонение)
-- Календарь для выбора дат
-- Генерация заглушек графиков
-- Экспорт в XLSX/CSV (модалка выбора формата)
+### 1. Authentication
 
-### 4. Раздел "Настройка"
+- **JWT access token** in HttpOnly cookies (24-hour lifetime)
+- Automatic redirect to `/login` when the token expires (401)
+- Modal window with an error on invalid credentials
+- Simple and reliable architecture without refresh tokens
 
-- Создание точки контроля (ферма/корпус/точка)
-- Добавление камер (URL + имя)
-- Список камер с возможностью удаления
-- Модалка предпросмотра камеры
-- Модалка данных нового вывода с календарём
+### 2. "General" Section
+
+- Filtering by farm, building, control point (multiple selection)
+- Cards displaying control point parameters
+- Red alert modal for critical events
+- Input fields for main parameters
+
+### 3. "Reports" Section
+
+- Horizontal filters
+- Metric selection (average weight, %, uniformity, standard deviation)
+- Calendar for date selection
+- Chart placeholder generation
+- Export to XLSX/CSV (format selection modal)
+
+### 4. "Settings" Section
+
+- Creating a control point (farm/building/point)
+- Adding cameras (URL + name)
+- Camera list with delete option
+- Camera preview modal
+- New batch data modal with calendar
 
 ## API Endpoints
 
-### Аутентификация
+### Authentication
 
-- `POST /auth/login` - вход в систему (возвращает JWT в httponly cookie)
-- `POST /auth/logout` - выход из системы (удаляет cookie)
-- `GET /auth/me` - получить данные текущего пользователя
+- `POST /auth/login` - sign in (returns JWT in httponly cookie)
+- `POST /auth/logout` - sign out (deletes cookie)
+- `GET /auth/me` - get current user data
 
-**Примечание:** Используется упрощенная архитектура с одним access_token (24 часа). Refresh token не используется.
+**Note:** A simplified architecture with a single access_token (24 hours) is used. Refresh token is not used.
 
-### Фермы и корпуса
+### Farms and Buildings
 
-- `GET /api/farms` - список ферм
-- `POST /api/farms` - создание фермы (администратор)
-- `GET /api/buildings` - список корпусов
-- `POST /api/buildings` - создание корпуса (администратор)
+- `GET /api/farms` - list of farms
+- `POST /api/farms` - create a farm (administrator)
+- `GET /api/buildings` - list of buildings
+- `POST /api/buildings` - create a building (administrator)
 
-### Точки контроля
+### Control Points
 
-- `GET /api/control-points/` - список точек с фильтрацией
-- `POST /api/control-points/` - создание точки
-- `POST /api/control-points/full` - создание полной структуры (администратор)
-- `GET /api/control-points/{id}` - получение точки
+- `GET /api/control-points/` - list of points with filtering
+- `POST /api/control-points/` - create a point
+- `POST /api/control-points/full` - create a full structure (administrator)
+- `GET /api/control-points/{id}` - get a point
 
-### Камеры
+### Cameras
 
-- `GET /api/cameras/` - список камер
-- `POST /api/cameras/` - добавление камеры
-- `DELETE /api/cameras/{id}` - удаление камеры
+- `GET /api/cameras/` - list of cameras
+- `POST /api/cameras/` - add a camera
+- `DELETE /api/cameras/{id}` - delete a camera
 
-### Отчёты
+### Reports
 
-- `POST /api/reports/generate` - генерация отчёта
-- `GET /api/reports/alert` - получение алертов
+- `POST /api/reports/generate` - generate a report
+- `GET /api/reports/alert` - get alerts
 
-### Другое
+### Other
 
-- `GET /health` - проверка здоровья API
+- `GET /health` - API health check
 
-## Архитектура и расширяемость
+## Architecture and Extensibility
 
 ### Backend
 
-Проект построен по принципу **разделения слоёв**:
+The project is built on the principle of **layer separation**:
 
-- **API layer** - endpoints и валидация запросов
-- **Business logic** - бизнес-логика (сейчас минимальная)
-- **Data layer** - работа с БД через ORM
+- **API layer** - endpoints and request validation
+- **Business logic** - business logic (currently minimal)
+- **Data layer** - database access via ORM
 
-Для расширения:
+To extend:
 
-1. **RBAC**: добавить поле `role` в User, создать декораторы проверки прав
-2. **Новые параметры**: расширить модели и схемы
-3. **Реальные графики**: заменить заглушки на агрегацию данных
-4. **Интеграция камер**: добавить сервис для работы с RTSP/WebRTC
-5. **История**: создать модель TimeSeriesData с foreign key на ControlPoint
+1. **RBAC**: add a `role` field to User, create permission check decorators
+2. **New parameters**: extend models and schemas
+3. **Real charts**: replace placeholders with data aggregation
+4. **Camera integration**: add a service for RTSP/WebRTC
+5. **History**: create a TimeSeriesData model with a foreign key to ControlPoint
 
 ### Frontend
 
-Модульная структура:
+Modular structure:
 
-- **Components** - переиспользуемые компоненты
-- **Pages** - страницы-контейнеры
-- **Services** - API клиенты
-- **Styles** - централизованные стили
+- **Components** - reusable components
+- **Pages** - page containers
+- **Services** - API clients
+- **Styles** - centralized styles
 
-Для расширения:
+To extend:
 
-1. **Графики**: интегрировать Chart.js или Recharts
-2. **Формы**: добавить React Hook Form для валидации
-3. **Состояние**: использовать Context API или Redux
-4. **Камеры**: интегрировать WebRTC плеер
+1. **Charts**: integrate Chart.js or Recharts
+2. **Forms**: add React Hook Form for validation
+3. **State**: use Context API or Redux
+4. **Cameras**: integrate a WebRTC player
 
-## Разработка без Docker
+## Development Without Docker
 
 ### Backend
 
@@ -245,22 +255,22 @@ npm install
 npm run dev
 ```
 
-## База данных
+## Database
 
-### SQLite (по умолчанию)
+### SQLite (default)
 
-База создаётся автоматически при первом запуске в `backend/data/southern_crown.db`
+The database is created automatically on first launch in `backend/data/southern_crown.db`
 
-### Переход на PostgreSQL
+### Migrating to PostgreSQL
 
-1. Обновите `DATABASE_URL` в `docker-compose.yml`:
+1. Update `DATABASE_URL` in `docker-compose.yml`:
 
 ```yaml
 environment:
   - DATABASE_URL=postgresql://user:password@postgres:5432/dbname
 ```
 
-2. Добавьте сервис PostgreSQL:
+2. Add a PostgreSQL service:
 
 ```yaml
 postgres:
@@ -271,107 +281,107 @@ postgres:
     POSTGRES_DB: dbname
 ```
 
-3. Установите `psycopg2` в requirements.txt
+3. Install `psycopg2` in requirements.txt
 
-## Безопасность
+## Security
 
-- ✅ **JWT access_token** в HttpOnly cookies (24 часа)
-- ✅ Простая архитектура без refresh токенов
-- ✅ CORS настроен для локальной разработки
-- ✅ Пароли хешируются через bcrypt
-- ✅ Rate limiting встроен (1000 req/min dev, 100 req/min prod)
-- ⚠️ Для продакшена: измените SECRET_KEY, настройте HTTPS
+- ✅ **JWT access_token** in HttpOnly cookies (24 hours)
+- ✅ Simple architecture without refresh tokens
+- ✅ CORS configured for local development
+- ✅ Passwords hashed with bcrypt
+- ✅ Built-in rate limiting (1000 req/min dev, 100 req/min prod)
+- ⚠️ For production: change SECRET_KEY, set up HTTPS
 
-## Тестирование
+## Testing
 
-### Backend тесты
+### Backend Tests
 
 ```bash
 cd backend
 pytest
 ```
 
-### Frontend тесты
+### Frontend Tests
 
 ```bash
 cd frontend
 npm test
 ```
 
-## Производственный deployment
+## Production Deployment
 
-1. Измените `SECRET_KEY` в `.env`
-2. Настройте реальную БД (PostgreSQL)
-3. Добавьте Nginx для обратного прокси
-4. Настройте SSL сертификаты
-5. Используйте production build для фронтенда:
+1. Change `SECRET_KEY` in `.env`
+2. Set up a real database (PostgreSQL)
+3. Add Nginx as a reverse proxy
+4. Set up SSL certificates
+5. Use a production build for the frontend:
 
 ```bash
 npm run build
 ```
 
-## Реализованные улучшения
+## Implemented Improvements
 
-Проект полностью документирован и готов к использованию. Подробнее читайте:
+The project is fully documented and ready to use. Read more:
 
-- **[API.md](API.md)** - Полная документация всех API endpoints с примерами
-- **[SECURITY.md](SECURITY.md)** - Руководство по безопасности и production deployment
-- **[IMPROVEMENTS.md](IMPROVEMENTS.md)** - Итоговое резюме всех улучшений
+- **[API.md](API.md)** - Full documentation of all API endpoints with examples
+- **[SECURITY.md](SECURITY.md)** - Security guide and production deployment
+- **[IMPROVEMENTS.md](IMPROVEMENTS.md)** - Final summary of all improvements
 
-### Безопасность
+### Security
 
-✅ Секретный ключ вынесен в переменные окружения  
-✅ Заголовки безопасности (X-Frame-Options, CSP, и др.)  
-✅ Rate limiting для предотвращения DoS атак  
-✅ RBAC проверки для admin-only операций  
-✅ Подробное логирование аутентификации  
+✅ Secret key moved to environment variables  
+✅ Security headers (X-Frame-Options, CSP, etc.)  
+✅ Rate limiting to prevent DoS attacks  
+✅ RBAC checks for admin-only operations  
+✅ Detailed authentication logging  
 
 ### API
 
-✅ Пагинация на всех list endpoints  
-✅ Комплексная документация API (см. [API.md](API.md))  
-✅ Валидация входных параметров  
-✅ Правильная обработка ошибок  
+✅ Pagination on all list endpoints  
+✅ Comprehensive API documentation (see [API.md](API.md))  
+✅ Input parameter validation  
+✅ Proper error handling  
 ✅ Health check endpoint (`GET /health`)  
 
-### База данных
+### Database
 
-✅ Timestamps (created_at/updated_at) на всех моделях  
-✅ Индексы на внешних ключах  
-✅ Cascade deletes для целостности данных  
-✅ Поддержка Alembic для миграций  
+✅ Timestamps (created_at/updated_at) on all models  
+✅ Indexes on foreign keys  
+✅ Cascade deletes for data integrity  
+✅ Alembic support for migrations  
 
 ### Frontend
 
-✅ ErrorBoundary для обработки ошибок  
-✅ Loading состояния на всех страницах  
-✅ Валидация форм перед отправкой  
-✅ ARIA метки для доступности  
-✅ Экспорт отчётов в XLSX/CSV  
-✅ Модальное окно "Данные нового вывода" с полями ввода и календарём  
+✅ ErrorBoundary for error handling  
+✅ Loading states on all pages  
+✅ Form validation before submission  
+✅ ARIA labels for accessibility  
+✅ Report export to XLSX/CSV  
+✅ "New batch data" modal with input fields and calendar  
 
 ### Docker
 
-✅ Multi-stage builds для меньшего размера образов  
-✅ Health checks для контейнеров  
+✅ Multi-stage builds for smaller image sizes  
+✅ Health checks for containers  
 ✅ Restart policies  
-✅ Правильные зависимости сервисов  
-✅ Non-root user для безопасности  
+✅ Proper service dependencies  
+✅ Non-root user for security  
 
-## Известные ограничения (MVP)
+## Known Limitations (MVP)
 
-- Нет реальных графиков (заглушки)
-- Упрощённый RBAC (только admin)
-- Нет интеграции с камерами
-- Нет исторических данных
-- Отсутствие unit/integration тестов
+- No real charts (placeholders)
+- Simplified RBAC (admin only)
+- No camera integration
+- No historical data
+- No unit/integration tests
 
-Все эти моменты можно расширить благодаря модульной архитектуре.
+All of these can be extended thanks to the modular architecture.
 
-## Лицензия
+## License
 
 MIT
 
-## Контакты
+## Contacts
 
-При возникновении вопросов создавайте Issue в репозитории.
+If you have questions, create an Issue in the repository.

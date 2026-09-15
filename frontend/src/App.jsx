@@ -5,7 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Loading from './components/Loading';
 import './styles/App.css';
 
-// Ленивая загрузка страниц - каждая страница в отдельном чанке
+// Lazy loading of pages - each page in a separate chunk
 const Login = lazy(() => import('./pages/Login'));
 const General = lazy(() => import('./pages/General'));
 const Reports = lazy(() => import('./pages/Reports'));
@@ -17,10 +17,10 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<Loading />}>
           <Routes>
-            {/* Публичный маршрут */}
+            {/* Public route */}
             <Route path="/login" element={<Login />} />
 
-            {/* Защищенные маршруты - требуют аутентификации */}
+            {/* Protected routes - require authentication */}
             <Route
               path="/dashboard/general"
               element={
@@ -46,7 +46,7 @@ function App() {
               }
             />
 
-            {/* Редиректы по умолчанию */}
+            {/* Default redirects */}
             <Route path="/dashboard" element={<Navigate to="/dashboard/general" replace />} />
             <Route path="/" element={<Navigate to="/dashboard/general" replace />} />
             <Route path="*" element={<Navigate to="/dashboard/general" replace />} />

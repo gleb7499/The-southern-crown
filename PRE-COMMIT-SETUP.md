@@ -1,29 +1,29 @@
-# Настройка Pre-commit Hooks (Husky + lint-staged)
+# Setting Up Pre-commit Hooks (Husky + lint-staged)
 
-## 🎯 Что это делает
+## 🎯 What This Does
 
-Автоматически проверяет и форматирует код **всего монорепозитория** перед каждым коммитом:
+Automatically checks and formats code in the **entire monorepo** before each commit:
 
 ### Frontend
 
-- **ESLint** - находит и исправляет проблемы JavaScript/React кода
-- **Prettier** - форматирует JS/JSX/JSON/CSS в едином стиле
+- **ESLint** - finds and fixes JavaScript/React code issues
+- **Prettier** - formats JS/JSX/JSON/CSS in a single style
 
 ### Backend
 
-- **Black** - автоформатирование Python кода
-- **isort** - сортировка импортов
-- **Flake8** - проверка стиля кода (PEP 8)
+- **Black** - auto-formatting of Python code
+- **isort** - import sorting
+- **Flake8** - code style checking (PEP 8)
 
-## 📦 Установка
+## 📦 Installation
 
-### Шаг 1: Установите зависимости Node.js (корневая папка)
+### Step 1: Install Node.js Dependencies (Root Folder)
 
 ```bash
 npm install
 ```
 
-### Шаг 2: Установите зависимости Frontend
+### Step 2: Install Frontend Dependencies
 
 ```bash
 cd frontend
@@ -31,7 +31,7 @@ npm install
 cd ..
 ```
 
-### Шаг 3: Установите зависимости Backend (Python)
+### Step 3: Install Backend Dependencies (Python)
 
 ```bash
 cd backend
@@ -39,163 +39,163 @@ pip install -r requirements.txt
 cd ..
 ```
 
-### Шаг 4: Инициализируйте Husky
+### Step 4: Initialize Husky
 
 ```bash
 npm run prepare
 ```
 
-Эта команда создаст папку `.husky` с git hooks.
+This command creates a `.husky` folder with git hooks.
 
-### Шаг 3: Сделайте pre-commit hook исполняемым (Linux/Mac)
+### Step 3: Make the Pre-commit Hook Executable (Linux/Mac)
 
 ```bash
 chmod +x .husky/pre-commit
 ```
 
-На Windows это не требуется.
+This is not required on Windows.
 
-## ✅ Проверка работы
+## ✅ Verifying It Works
 
-1. **Проверить весь проект:**
+1. **Check the whole project:**
 
    ```bash
    npm run lint
    ```
 
-2. **Исправить все проблемы во всём проекте:**
+2. **Fix all issues in the whole project:**
 
    ```bash
    npm run format
    ```
 
-3. **Frontend отдельно:**
+3. **Frontend separately:**
 
    ```bash
-   npm run frontend:lint       # Проверка
-   npm run frontend:lint:fix   # Автофикс
-   npm run frontend:format     # Форматирование
+   npm run frontend:lint       # Check
+   npm run frontend:lint:fix   # Autofix
+   npm run frontend:format     # Format
    ```
 
-4. **Backend отдельно:**
+4. **Backend separately:**
 
    ```bash
-   npm run backend:lint    # Проверка
-   npm run backend:format  # Форматирование
+   npm run backend:lint    # Check
+   npm run backend:format  # Format
    ```
 
-5. **Проверить git hook:**
+5. **Check the git hook:**
 
    ```bash
-   # Измените любой файл
+   # Change any file
    gFrontend
 
 **ESLint** ([frontend/.eslintrc.cjs](frontend/.eslintrc.cjs))
 
-- Проверяет качество JavaScript/React кода
-- Находит баги и антипаттерны
-- Интегрирован с React и React Hooks
+- Checks JavaScript/React code quality
+- Finds bugs and anti-patterns
+- Integrated with React and React Hooks
 
 **Prettier** ([frontend/.prettierrc.json](frontend/.prettierrc.json))
 
-- Форматирует код в едином стиле
-- Настроен на одинарные кавычки, точки с запятой, 2 пробела
+- Formats code in a single style
+- Configured for single quotes, semicolons, 2 spaces
 
 ### Backend
 
 **Black** ([backend/pyproject.toml](backend/pyproject.toml))
 
-- Автоформатирование Python кода
-- 100 символов на строку
-- PEP 8 совместимый стиль
+- Auto-formatting of Python code
+- 100 characters per line
+- PEP 8 compatible style
 
 **isort** ([backend/pyproject.toml](backend/pyproject.toml))
 
-- Автоматическая сортировка импортов
-- Профиль "black" для совместимости
+- Automatic import sorting
+- "black" profile for compatibility
 
 **Flake8** ([backend/.flake8](backend/.flake8))
 
-- Проверка стиля кода (PEP 8)
-- Максимальная сложность функций
+- Code style checking (PEP 8)
+- Maximum function complexity
 
-### lint-staged (в [package.json](package.json))
+### lint-staged (in [package.json](package.json))
 
 ```json
 "lint-staged": {
   "frontend/**/*.{js,jsx}": [
     "cd frontend && eslint --fix",
-### Весь проект
+### Whole Project
 
-| Команда | Описание |
+| Command | Description |
 |---------|----------|
-| `npm run lint` | Проверить весь проект (frontend + backend) |
-| `npm run format` | Форматировать весь проект |
+| `npm run lint` | Check the whole project (frontend + backend) |
+| `npm run format` | Format the whole project |
 
 ### Frontend
 
-| Команда | Описание |
-|---------|----------| (Frontend JS или Backend Python)
+| Command | Description |
+|---------|----------| (Frontend JS or Backend Python)
    ↓
-2. git add файлы
+2. git add files
    ↓
-3. git commit -m "сообщение"
+3. git commit -m "message"
    ↓
-4. Husky перехватывает commit
+4. Husky intercepts the commit
    ↓
-5. lint-staged определяет типы файлов:
+5. lint-staged determines file types:
    │
    ├─→ Frontend (.js, .jsx) → ESLint + Prettier
    ├─→ Frontend (.json, .css) → Prettier
    └─→ Backend (.py) → Black + isort + Flake8
 |---------|----------|
-| `npm run backend:dev` | Запустить FastAPI сервер |
-| `npm run backend:lint` | Проверить код (black + isort + flake8) |
-| `npm run backend:format` | Форматировать код (black + isort)
+| `npm run backend:dev` | Start the FastAPI server |
+| `npm run backend:lint` | Check code (black + isort + flake8) |
+| `npm run backend:format` | Format code (black + isort) |
     "cd backend && black",
     "cd backend && isort",
     "cd backend && flake8"
 "lint-staged": {
   "*.{js,jsx}": [
-    "eslint --fix",      // Сначала линтинг с автофиксом
-    "prettier --write"   // Потом форматирование
+    "eslint --fix",      // Lint with autofix first
+    "prettier --write"   // Then formatting
   ],
   "*.{json,css,md}": [
-    "prettier --write"   // Только форматирование для этих типов
+    "prettier --write"   // Formatting only for these types
   ]
 }
 ```
 
-## 🚀 Доступные команды
+## 🚀 Available Commands
 
-| Команда | Описание |
+| Command | Description |
 |---------|----------|
-| `npm run lint` | Проверить код на ошибки |
-| `npm run lint:fix` | Исправить ошибки автоматически |
-| `npm run format` | Форматировать весь код |
-| `npm run format:check` | Проверить форматирование без изменений |
+| `npm run lint` | Check code for errors |
+| `npm run lint:fix` | Fix errors automatically |
+| `npm run format` | Format all code |
+| `npm run format:check` | Check formatting without changes |
 
 ## 🎭 Workflow
 
-(Python + JavaScript) форматируется одинаково  
-✅ **Меньше багов** - линтеры ловят проблемы до попадания в репозиторий  
-✅ **Автоматизация** - не нужно помнить запускать линтер вручную  
-✅ **Быстрота** - lint-staged проверяет только изменённые файлы  
-✅ **Code Review** - меньше споров о стиле кода  
-✅ **Монорепозиторий** - единая конфигурация для frontend и backend  
-✅ **PEP 8** - backend код соответствует Python стандартам
+(Python + JavaScript) is formatted the same way  
+✅ **Fewer bugs** - linters catch problems before they reach the repository  
+✅ **Automation** - no need to remember to run the linter manually  
+✅ **Speed** - lint-staged checks only changed files  
+✅ **Code Review** - fewer style arguments  
+✅ **Monorepo** - single configuration for frontend and backend  
+✅ **PEP 8** - backend code follows Python standards  
    ↓
-3. git commit -m "сообщение"
+3. git commit -m "message"
    ↓
-4. Husky перехватывает commit
+4. Husky intercepts the commit
    ↓
-5. lint-staged запускает ESLint и Prettier
+5. lint-staged runs ESLint and Prettier
    ↓
-6. Если есть ошибки - коммит отменяется
+6. If there are errors - the commit is cancelled
    ↓
-7. Исправьте ошибки и попробуйте снова
+7. Fix the errors and try again
    ↓
-8. Если всё OK - коммит проходит ✅
+8. If everything is OK - the commit passes ✅
 
 ```
 
@@ -204,39 +204,39 @@ npm run prepare
 chmod +x .husky/pre-commit  # Linux/Mac
 ```
 
-**Проблема:** ESLint/Prettier ругается на все файлы  
-**Решение:**
+**Problem:** ESLint/Prettier complains about all files  
+**Solution:**
 
 ```bash
 npm run frontend:lint:fix
 npm run frontend:format
 ```
 
-**Проблема:** Black/Flake8 ругается на Python файлы  
-**Решение:**
+**Problem:** Black/Flake8 complains about Python files  
+**Solution:**
 
 ```bash
 npm run backend:format
 ```
 
-**Проблема:** Windows не видит sh скрипт  
-**Решение:** Установите Git Bash (входит в Git for Windows)
+**Problem:** Windows does not see the sh script  
+**Solution:** Install Git Bash (included in Git for Windows)
 
-**Проблема:** Python линтеры не установлены  
-**Решение:**
+**Problem:** Python linters are not installed  
+**Solution:**
 
 ```bash
 cd backend
 pip install black isort flake8
 ```
 
-**Проблема:** lint-staged зависает  
-**Решение:** Проверьте что команды `cd frontend` и `cd backend` корректны для вашей ОСнные файлы  
-✅ **Code Review** - меньше споров о стиле кода  
+**Problem:** lint-staged hangs  
+**Solution:** Make sure the `cd frontend` and `cd backend` commands are correct for your OSd files  
+✅ **Code Review** - fewer style arguments  
 
-## 🔥 Интеграция в CI/CD
+## 🔥 CI/CD Integration
 
-В будущем можно добавить в GitHub Actions:
+In the future, this can be added to GitHub Actions:
 
 ```yaml
 - name: Lint and Format Check
@@ -245,13 +245,13 @@ pip install black isort flake8
     npm run format:check
 ```
 
-## 🛠️ Устранение проблем
+## 🛠️ Troubleshooting
 
-**Проблема:** Hook не запускается  
-**Решение:** Проверьте что `.husky` папка в git и что `npm run prepare` был выполнен
+**Problem:** The hook does not run  
+**Solution:** Make sure the `.husky` folder is in git and that `npm run prepare` was executed
 
-**Проблема:** ESLint ругается на все файлы  
-**Решение:** Запустите `npm run lint:fix && npm run format` один раз для форматирования всего проекта
+**Problem:** ESLint complains about all files  
+**Solution:** Run `npm run lint:fix && npm run format` once to format the whole project
 
-**Проблема:** Windows не видит sh скрипт  
-**Решение:** Установите Git Bash или используйте WSL
+**Problem:** Windows does not see the sh script  
+**Solution:** Install Git Bash or use WSL

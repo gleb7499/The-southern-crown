@@ -19,19 +19,19 @@ logger = logging.getLogger(__name__)
 
 @router.get("/", response_model=List[GrowthRate])
 async def get_growth_rates(
-    farm_id: Optional[int] = Query(None, description="Фильтр по ID фермы"),
-    control_point_id: Optional[int] = Query(None, description="Фильтр по ID точки контроля"),
-    skip: int = Query(0, ge=0, description="Пропустить записей"),
-    limit: int = Query(100, ge=1, le=1000, description="Максимум записей"),
+    farm_id: Optional[int] = Query(None, description="Filter by farm ID"),
+    control_point_id: Optional[int] = Query(None, description="Filter by control point ID"),
+    skip: int = Query(0, ge=0, description="Records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum records"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
-    Получить список норм развития с фильтрацией.
+    Get the list of growth rates with filtering.
 
-    Фильтры:
-    - **farm_id**: ID фермы
-    - **control_point_id**: ID точки контроля
+    Filters:
+    - **farm_id**: Farm ID
+    - **control_point_id**: Control point ID
     """
     query = select(GrowthRateModel)
 
@@ -55,7 +55,7 @@ async def get_growth_rate(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Получить конкретную норму развития по ID.
+    Get a specific growth rate by ID.
     """
     result = await db.execute(
         select(GrowthRateModel).filter(GrowthRateModel.id == growth_rate_id)
@@ -77,26 +77,26 @@ async def create_growth_rate(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Создать новую норму развития.
+    Create a new growth rate.
 
-    - **farm_id**: ID фермы
-    - **control_point_id**: ID точки контроля
-    - **chickens_quantity**: Количество цыплят (положительное число)
-    - **growth_day**: День развития (от 1)
-    - **initial_average_weight**: Начальный средний вес в граммах
-    - **landing_date**: Дата посадки
-    - **closing_date**: Дата закрытия (опционально)
+    - **farm_id**: Farm ID
+    - **control_point_id**: Control point ID
+    - **chickens_quantity**: Number of chickens (positive number)
+    - **growth_day**: Growth day (from 1)
+    - **initial_average_weight**: Initial average weight in grams
+    - **landing_date**: Landing date
+    - **closing_date**: Closing date (optional)
 
-    Проверяется существование фермы и точки контроля, их соответствие друг другу.
+    The existence of the farm and control point is checked, as well as their correspondence.
     """
-    # Проверка существования фермы
+    # Check that the farm exists
     farm_result = await db.execute(select(Farm).filter(Farm.id == growth_rate.farm_id))
     farm = farm_result.scalar_one_or_none()
     if not farm:
         logger.error(f"Farm not found: {growth_rate.farm_id}")
         raise HTTPException(status_code=404, detail=f"Farm with id {growth_rate.farm_id} not found")
 
-    # Проверка существования точки контроля
+    # Check that the control point exists
     cp_result = await db.execute(
         select(ControlPoint).filter(ControlPoint.id == growth_rate.control_point_id)
     )
@@ -108,7 +108,7 @@ async def create_growth_rate(
             detail=f"Control point with id {growth_rate.control_point_id} not found",
         )
 
-    # Проверка что точка контроля принадлежит указанной ферме
+    # Check that the control point belongs to the specified farm
     if control_point.farm_id != growth_rate.farm_id:  # type: ignore
         logger.error(
             f"Control point {growth_rate.control_point_id} does not belong to farm {growth_rate.farm_id}"
@@ -118,14 +118,14 @@ async def create_growth_rate(
             detail=f"Control point {growth_rate.control_point_id} does not belong to farm {growth_rate.farm_id}",
         )
 
-    # Валидация дат
+    # Date validation
     if growth_rate.closing_date and growth_rate.closing_date < growth_rate.landing_date:
         raise HTTPException(
             status_code=400,
             detail="Closing date cannot be earlier than landing date",
         )
 
-    # Создание записи
+    # Create the record
     db_growth_rate = GrowthRateModel(**growth_rate.model_dump())
     db.add(db_growth_rate)
     await db.commit()
@@ -145,12 +145,12 @@ async def update_growth_rate(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Обновить существующую норму развития.
+    Update an existing growth rate.
 
-    Можно обновить любые поля. Все поля опциональны.
-    Проверяется валидность новых значений farm_id и control_point_id.
+    Any fields can be updated. All fields are optional.
+    The validity of the new farm_id and control_point_id values is checked.
     """
-    # Получаем существующую запись
+    # Get the existing record
     result = await db.execute(
         select(GrowthRateModel).filter(GrowthRateModel.id == growth_rate_id)
     )
@@ -161,13 +161,13 @@ async def update_growth_rate(
             status_code=404, detail=f"Growth rate with id {growth_rate_id} not found"
         )
 
-    # Обновляем только те поля, которые переданы
+    # Update only the fields that were provided
     update_data = growth_rate_update.model_dump(exclude_unset=True)
 
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    # Если обновляется farm_id - проверяем существование
+    # If farm_id is being updated - check that it exists
     if "farm_id" in update_data:
         farm_result = await db.execute(select(Farm).filter(Farm.id == update_data["farm_id"]))
         farm = farm_result.scalar_one_or_none()
@@ -176,7 +176,7 @@ async def update_growth_rate(
                 status_code=404, detail=f"Farm with id {update_data['farm_id']} not found"
             )
 
-    # Если обновляется control_point_id - проверяем существование
+    # If control_point_id is being updated - check that it exists
     if "control_point_id" in update_data:
         cp_result = await db.execute(
             select(ControlPoint).filter(ControlPoint.id == update_data["control_point_id"])
@@ -188,7 +188,7 @@ async def update_growth_rate(
                 detail=f"Control point with id {update_data['control_point_id']} not found",
             )
 
-    # Проверка соответствия фермы и точки контроля (если оба обновляются или один обновляется)
+    # Check the correspondence of the farm and control point (if both are being updated or one of them)
     final_farm_id = update_data.get("farm_id", db_growth_rate.farm_id)
     final_cp_id = update_data.get("control_point_id", db_growth_rate.control_point_id)
 
@@ -200,7 +200,7 @@ async def update_growth_rate(
             detail=f"Control point {final_cp_id} does not belong to farm {final_farm_id}",
         )
 
-    # Валидация дат
+    # Date validation
     final_landing_date = update_data.get("landing_date", db_growth_rate.landing_date)
     final_closing_date = update_data.get("closing_date", db_growth_rate.closing_date)
 
@@ -210,7 +210,7 @@ async def update_growth_rate(
             detail="Closing date cannot be earlier than landing date",
         )
 
-    # Применяем обновления
+    # Apply the updates
     for field, value in update_data.items():
         setattr(db_growth_rate, field, value)
 
@@ -228,9 +228,9 @@ async def delete_growth_rate(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Удалить норму развития по ID.
+    Delete a growth rate by ID.
 
-    - **growth_rate_id**: ID нормы развития для удаления
+    - **growth_rate_id**: ID of the growth rate to delete
     """
     result = await db.execute(
         select(GrowthRateModel).filter(GrowthRateModel.id == growth_rate_id)

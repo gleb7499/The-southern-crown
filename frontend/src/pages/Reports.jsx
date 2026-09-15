@@ -11,14 +11,14 @@ const REPORT_METRICS = [
     key: 'mean_weight',
     label: 'Средний вес',
     unit: 'г',
-    // Дневной средний (для текущей модели данных обычно равен gram за день)
+    // Daily average (for the current data model usually equal to gram for the day)
     getValue: (point) => point?.meanDaily,
   },
   {
     key: 'std_deviation',
     label: 'Стандартное отклонение',
     unit: 'г',
-    // Накопительное σ по всем измерениям до текущей даты
+    // Cumulative σ over all measurements up to the current date
     getValue: (point) => point?.stdDev,
   },
   {
@@ -76,7 +76,7 @@ function formatTick(value, unit, step) {
 }
 
 function buildYAxis(values, unit, metricKey) {
-  // Для процентных метрик (uniformity, cv) фиксируем шкалу 0-100%
+  // For percentage metrics (uniformity, cv) we fix the scale to 0-100%
   if (unit === '%') {
     const yMax = 100;
     const step = 25;
@@ -84,7 +84,7 @@ function buildYAxis(values, unit, metricKey) {
     return { yMax, ticks, step };
   }
 
-  // Для весовых метрик динамическая шкала
+  // For weight metrics a dynamic scale
   const safeValues = (values || []).filter(
     (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0
   );
@@ -112,7 +112,7 @@ function mean(values) {
   return sum / validValues.length;
 }
 
-// По аналогии с бэкендом: variance делим на N (популяционная дисперсия)
+// Following the backend: we divide variance by N (population variance)
 function stdDev(values) {
   if (!values || values.length === 0) return 0;
   const validValues = values.filter(v => typeof v === 'number' && Number.isFinite(v));
@@ -147,10 +147,10 @@ function buildDailyPoints(reports, targetRangePercent) {
 
   const grouped = groupReportsByDate(reports);
 
-  // Важно:
-  // - В текущей БД обычно 1 Report на дату => σ внутри дня = 0.
-  // - Чтобы графики σ/CV были осмысленными без изменения бэкенда,
-  //   считаем их накопительно (по всем измерениям до текущей даты).
+  // Important:
+  // - In the current DB there is usually 1 Report per date => σ within a day = 0.
+  // - To make the σ/CV charts meaningful without changing the backend,
+  //   we compute them cumulatively (over all measurements up to the current date).
   const points = [];
   const cumulative = [];
 
@@ -164,18 +164,18 @@ function buildDailyPoints(reports, targetRangePercent) {
     if (cumulativeMean === null || !Number.isFinite(cumulativeMean)) continue;
 
     const sd = stdDev(cumulative);
-    // CV: защита от деления на ноль и проверка на конечность
+    // CV: guard against division by zero and check for finiteness
     const cv = cumulativeMean > 0 && Number.isFinite(sd) ? (sd / cumulativeMean) * 100 : 0;
 
-    // Однородность по формуле:
-    // (кол-во птиц в целевом диапазоне / общее кол-во взвешенных птиц) * 100
-    // Диапазон берём как ±X% от накопительного среднего.
+    // Uniformity by formula:
+    // (number of birds in the target range / total number of weighed birds) * 100
+    // We take the range as ±X% of the cumulative average.
     const lower = cumulativeMean * (1 - p);
     const upper = cumulativeMean * (1 + p);
     const inRange = cumulative.filter((v) => v >= lower && v <= upper).length;
     const uniformity = cumulative.length > 0 ? (inRange / cumulative.length) * 100 : 0;
 
-    // Финальная валидация всех метрик перед добавлением в точки
+    // Final validation of all metrics before adding them to the points
     if (!Number.isFinite(cv) || !Number.isFinite(uniformity) || !Number.isFinite(sd)) {
       continue;
     }
@@ -226,7 +226,7 @@ export default function Reports() {
       return;
     }
 
-    // Проверка корректности uniformityRangePercent для метрики "Однородность"
+    // Validate uniformityRangePercent for the "Однородность" metric
     if (selectedMetricKey === 'uniformity') {
       if (uniformityRangePercent === '' || 
           !Number.isFinite(Number(uniformityRangePercent)) || 
@@ -236,7 +236,7 @@ export default function Reports() {
       }
     }
 
-    // Проверка, что выбранная дата не в будущем (сравниваем строки в формате YYYY-MM-DD)
+    // Check that the selected date is not in the future (compare strings in YYYY-MM-DD format)
     const today = new Date();
     const todayString = today.getFullYear() + '-' + 
                         String(today.getMonth() + 1).padStart(2, '0') + '-' + 
@@ -247,7 +247,7 @@ export default function Reports() {
     }
 
     try {
-      // Загружаем данные отчета для выбранной точки контроля
+      // Load report data for the selected control point
       const response = await fetch(`/api/reports/?control_point_id=${selectedControlPointId}`, {
         method: 'GET',
         credentials: 'include',
@@ -292,7 +292,7 @@ export default function Reports() {
           : 10;
       const points = buildDailyPoints(chartData.reports, safeRangePercent);
       
-      // Вычисляем агрегированные метрики
+      // Compute the aggregated metrics
       const allWeights = chartData.reports.map(r => r.gram).filter(g => typeof g === 'number' && Number.isFinite(g));
       const avgWeight = mean(allWeights);
       const stdDeviation = stdDev(allWeights);
@@ -300,23 +300,23 @@ export default function Reports() {
       const lastPoint = points[points.length - 1];
       const uniformity = lastPoint?.uniformity ?? 0;
 
-      // Создаем рабочую книгу
+      // Create the workbook
       const wb = XLSX.utils.book_new();
       
-      // Заголовок с метаданными (3 строки)
+      // Header with metadata (3 rows)
       const headerData = [
         ['Файл:', chartData.controlPointName, '', 'Подсчёт:', chartData.reports.length, '', 'CV [%]:', cv.toFixed(3)],
         ['Весы:', 'SCALE 1', '', 'Средний [Гр]:', avgWeight?.toFixed(3) || '0.000', '', 'Единообразие [%]:', uniformity.toFixed(3)],
         ['Замечание:', '', '', 'Ст. отклонение [Гр]:', stdDeviation.toFixed(3), '', 'Скорость [1/Час]:', '']
       ];
 
-      // Пустая строка
+      // Empty row
       const emptyRow = ['', '', '', '', '', '', ''];
 
-      // Заголовки таблицы
+      // Table headers
       const tableHeader = ['Файл', 'Количество', 'Дата и время', 'Вес [Гр]', 'Пол / Лимит / Категория'];
 
-      // Данные таблицы
+      // Table data
       const tableData = chartData.reports.map((report, index) => {
         const dateTime = report.date ? `${report.date} 00:00:00` : '';
         return [
@@ -328,7 +328,7 @@ export default function Reports() {
         ];
       });
 
-      // Собираем все данные
+      // Collect all data
       const wsData = [
         ...headerData,
         emptyRow,
@@ -336,10 +336,10 @@ export default function Reports() {
         ...tableData
       ];
 
-      // Создаем лист
+      // Create the sheet
       const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-      // Устанавливаем ширину колонок
+      // Set the column widths
       ws['!cols'] = [
         { wch: 15 },  // Файл
         { wch: 12 },  // Количество
@@ -348,13 +348,13 @@ export default function Reports() {
         { wch: 25 }   // Пол / Лимит / Категория
       ];
 
-      // Добавляем лист в книгу
+      // Add the sheet to the workbook
       XLSX.utils.book_append_sheet(wb, ws, 'Отчёт');
 
-      // Генерируем имя файла
+      // Generate the file name
       const fileName = `${chartData.controlPointName}_${chartData.date}_${metric.label}.xlsx`;
 
-      // Сохраняем файл
+      // Save the file
       XLSX.writeFile(wb, fileName);
     } catch (error) {
       console.error('Error exporting XLSX:', error);
@@ -376,7 +376,7 @@ export default function Reports() {
           : 10;
       const points = buildDailyPoints(chartData.reports, safeRangePercent);
       
-      // Вычисляем агрегированные метрики
+      // Compute the aggregated metrics
       const allWeights = chartData.reports.map(r => r.gram).filter(g => typeof g === 'number' && Number.isFinite(g));
       const avgWeight = mean(allWeights);
       const stdDeviation = stdDev(allWeights);
@@ -384,26 +384,26 @@ export default function Reports() {
       const lastPoint = points[points.length - 1];
       const uniformity = lastPoint?.uniformity ?? 0;
 
-      // Формируем CSV содержимое с точкой с запятой как разделителем (для русского Excel)
+      // Build the CSV content with a semicolon as the separator (for Russian Excel)
       let csvContent = '';
       
-      // Заголовок с метаданными (3 строки)
+      // Header with metadata (3 rows)
       csvContent += `Файл:;${chartData.controlPointName};;Подсчёт:;${chartData.reports.length};;CV [%]:;${cv.toFixed(3)}\n`;
       csvContent += `Весы:;SCALE 1;;Средний [Гр]:;${avgWeight?.toFixed(3) || '0.000'};;Единообразие [%]:;${uniformity.toFixed(3)}\n`;
       csvContent += `Замечание:;;;Ст. отклонение [Гр]:;${stdDeviation.toFixed(3)};;Скорость [1/Час]:;\n`;
       
-      // Пустая строка и заголовки таблицы
+      // Empty row и заголовки таблицы
       csvContent += `;;;;;;;\n`;
       csvContent += 'Файл;Количество;Дата и время;Вес [Гр];Пол / Лимит / Категория\n';
 
-      // Данные таблицы
+      // Table data
       chartData.reports.forEach((report, index) => {
         const dateTime = report.date ? `${report.date} 00:00:00` : '';
         const weight = report.gram?.toFixed(3) || '0.000';
         csvContent += `${chartData.controlPointName};${index + 1};${dateTime};${weight};Не использовался\n`;
       });
 
-      // Создаем Blob и скачиваем
+      // Create a Blob and download
       const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -502,7 +502,7 @@ export default function Reports() {
             <div className="chart">
               {(() => {
                 const metric = getMetricByKey(chartData.metricKey);
-                // Обработка пустого значения uniformityRangePercent
+                // Handle an empty uniformityRangePercent value
                 const safeRangePercent = 
                   typeof uniformityRangePercent === 'number' && Number.isFinite(uniformityRangePercent)
                     ? uniformityRangePercent
@@ -524,11 +524,11 @@ export default function Reports() {
                 }
 
                 const maxValue = Math.max(...values);
-                // Ось Y: для процентов фиксированная 0-100%, для веса - динамическая
+                // Y axis: fixed 0-100% for percentages, dynamic for weight
                 const { yMax, ticks: tickValues, step } = buildYAxis(values, metric.unit, metric.key);
 
                 const xStep = 700 / Math.max(points.length - 1, 1);
-                // График занимает высоту от y=350 до y=80, то есть 270 пикселей
+                // The chart occupies the height from y=350 to y=80, i.e. 270 pixels
                 const getY = (value) => 350 - (value / yMax) * 270;
                 const safeValueAt = (index) => toNumberOrNull(metric.getValue(points[index]));
 

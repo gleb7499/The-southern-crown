@@ -26,7 +26,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-# === CRUD операции для Report ===
+# === CRUD operations for Report ===
 
 
 @router.post("/", response_model=Report, status_code=201)
@@ -36,21 +36,21 @@ async def create_report(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Создать новую запись отчета с весом для контрольной точки.
+    Create a new report record with weight for a control point.
 
-    - **farm_id**: ID фермы
-    - **control_point_id**: ID контрольной точки
-    - **date**: Дата измерения
-    - **gram**: Вес в граммах (положительное число)
+    - **farm_id**: Farm ID
+    - **control_point_id**: Control point ID
+    - **date**: Measurement date
+    - **gram**: Weight in grams (positive number)
     """
-    # Проверка существования фермы
+    # Check that the farm exists
     farm_result = await db.execute(select(Farm).filter(Farm.id == report.farm_id))
     farm = farm_result.scalar_one_or_none()
     if not farm:
         logger.error(f"Farm not found: {report.farm_id}")
         raise HTTPException(status_code=404, detail=f"Farm with id {report.farm_id} not found")
 
-    # Проверка существования контрольной точки
+    # Check that the control point exists
     cp_result = await db.execute(
         select(ControlPoint).filter(ControlPoint.id == report.control_point_id)
     )
@@ -62,7 +62,7 @@ async def create_report(
             detail=f"Control point with id {report.control_point_id} not found",
         )
 
-    # Проверка что контрольная точка принадлежит указанной ферме
+    # Check that the control point belongs to the specified farm
     if control_point.farm_id != report.farm_id:  # type: ignore
         logger.error(
             f"Control point {report.control_point_id} does not belong to farm {report.farm_id}"
@@ -72,7 +72,7 @@ async def create_report(
             detail=f"Control point {report.control_point_id} does not belong to farm {report.farm_id}",
         )
 
-    # Создание записи
+    # Create the record
     db_report = ReportModel(**report.model_dump())
     db.add(db_report)
     await db.commit()
@@ -86,22 +86,22 @@ async def create_report(
 
 @router.get("/", response_model=List[Report])
 async def get_reports(
-    farm_id: Optional[int] = Query(None, description="Фильтр по ID фермы"),
-    control_point_id: Optional[int] = Query(None, description="Фильтр по ID контрольной точки"),
-    date_from: Optional[date] = Query(None, description="Начальная дата периода"),
-    date_to: Optional[date] = Query(None, description="Конечная дата периода"),
-    skip: int = Query(0, ge=0, description="Пропустить записей"),
-    limit: int = Query(100, ge=1, le=1000, description="Максимум записей"),
+    farm_id: Optional[int] = Query(None, description="Filter by farm ID"),
+    control_point_id: Optional[int] = Query(None, description="Filter by control point ID"),
+    date_from: Optional[date] = Query(None, description="Period start date"),
+    date_to: Optional[date] = Query(None, description="Period end date"),
+    skip: int = Query(0, ge=0, description="Records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum records"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
-    Получить список отчетов с фильтрацией.
+    Get the list of reports with filtering.
 
-    Фильтры:
-    - **farm_id**: ID фермы
-    - **control_point_id**: ID контрольной точки
-    - **date_from/date_to**: Диапазон дат
+    Filters:
+    - **farm_id**: Farm ID
+    - **control_point_id**: Control point ID
+    - **date_from/date_to**: Date range
     """
     query = select(ReportModel)
 
@@ -125,7 +125,7 @@ async def get_reports(
     return reports
 
 
-# === Статистика и аналитика ===
+# === Statistics and analytics ===
 
 
 @router.post("/statistics", response_model=List[ReportStatistics])
@@ -135,15 +135,15 @@ async def get_statistics(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Получить статистику по отчетам: среднее, стандартное отклонение, мин/макс.
+    Get report statistics: average, standard deviation, min/max.
 
-    Группировка по контрольным точкам.
-    Фильтры:
-    - **farm_ids**: Список ID ферм
-    - **control_point_ids**: Список ID контрольных точек
-    - **date_from/date_to**: Диапазон дат
+    Grouped by control points.
+    Filters:
+    - **farm_ids**: List of farm IDs
+    - **control_point_ids**: List of control point IDs
+    - **date_from/date_to**: Date range
     """
-    # Базовый запрос с группировкой
+    # Base query with grouping
     query = (
         select(
             ReportModel.control_point_id,
@@ -160,7 +160,7 @@ async def get_statistics(
         .join(Farm, ReportModel.farm_id == Farm.id)
     )
 
-    # Применение фильтров
+    # Apply filters
     if filters.farm_ids:
         query = query.where(ReportModel.farm_id.in_(filters.farm_ids))
 
@@ -173,7 +173,7 @@ async def get_statistics(
     if filters.date_to:
         query = query.where(ReportModel.date <= filters.date_to)
 
-    # Группировка
+    # Grouping
     query = query.group_by(
         ReportModel.control_point_id,
         ControlPoint.name,
@@ -184,10 +184,10 @@ async def get_statistics(
     result = await db.execute(query)
     results = result.all()
 
-    # Вычисление стандартного отклонения для каждой группы
+    # Calculate the standard deviation for each group
     statistics = []
     for row in results:
-        # Получаем все значения gram для этой контрольной точки
+        # Get all gram values for this control point
         values_query = select(ReportModel.gram).where(
             ReportModel.control_point_id == row.control_point_id,
             ReportModel.farm_id == row.farm_id,
@@ -201,7 +201,7 @@ async def get_statistics(
         values_result = await db.execute(values_query)
         values = [v[0] for v in values_result.all()]
 
-        # Вычисление стандартного отклонения
+        # Calculate the standard deviation
         if len(values) > 1:
             mean = sum(values) / len(values)
             variance = sum((x - mean) ** 2 for x in values) / len(values)
@@ -229,7 +229,7 @@ async def get_statistics(
     return statistics
 
 
-# === Генерация отчетов с графиками (старый функционал, улучшенный) ===
+# === Report generation with charts (old functionality, improved) ===
 
 
 @router.post("/generate", response_model=ReportResponse)
@@ -239,14 +239,14 @@ async def generate_report(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Генерация отчета с графиками для визуализации.
+    Generate a report with charts for visualization.
 
-    На основе реальных данных из БД строит графики по дням.
+    Builds day-based charts from real database data.
     """
     charts = []
 
     for cp_id in report_request.control_point_ids:
-        # Получаем контрольную точку
+        # Get the control point
         cp_result = await db.execute(select(ControlPoint).filter(ControlPoint.id == cp_id))
         control_point = cp_result.scalar_one_or_none()
 
@@ -254,7 +254,7 @@ async def generate_report(
             logger.warning(f"Control point {cp_id} not found, skipping")
             continue
 
-        # Получаем данные отчетов
+        # Get report data
         query = select(ReportModel).where(ReportModel.control_point_id == cp_id)
 
         if report_request.start_date:
@@ -271,9 +271,9 @@ async def generate_report(
             logger.warning(f"No data for control point {cp_id}")
             continue
 
-        # Формируем данные для графика
+        # Build the chart data
         if report_request.indicator == "средний вес":
-            # Группируем по дням и вычисляем среднее
+            # Group by day and compute the average
             days = []
             values = []
             for idx, report in enumerate(reports):
@@ -289,7 +289,7 @@ async def generate_report(
                 )
             )
 
-    # Вычисляем общее отклонение по всем точкам
+    # Calculate the overall deviation across all points
     if charts:
         all_values = []
         for chart in charts:

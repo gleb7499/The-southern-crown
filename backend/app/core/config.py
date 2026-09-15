@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     # Database
-    # Для async SQLAlchemy используем postgresql+asyncpg
-    # Формат: postgresql://user:password@host:port/dbname (будет автоматически преобразован в postgresql+asyncpg://)
+    # For async SQLAlchemy we use postgresql+asyncpg
+    # Format: postgresql://user:password@host:port/dbname (will be automatically converted to postgresql+asyncpg://)
     DATABASE_URL: str = "postgresql://postgres:postgres@postgres:5432/southern_crown"
 
     # CORS
@@ -28,12 +28,12 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = "admin123"
 
     # Video Recording Settings
-    # Время запуска записей в формате HH:MM, разделенные запятыми
-    # Например: "08:00,14:00" для 2 раз в день или "08:00,14:00,20:00" для 3 раз
+    # Recording start times in HH:MM format, comma-separated
+    # For example: "08:00,14:00" for 2 times a day or "08:00,14:00,20:00" for 3 times
     VIDEO_RECORDING_SCHEDULE: str = "18:10,14:00"
-    # Длительность записи в секундах
-    VIDEO_RECORDING_DURATION: int = 300  # 5 минут по умолчанию
-    # Путь для сохранения записей
+    # Recording duration in seconds
+    VIDEO_RECORDING_DURATION: int = 300  # 5 minutes by default
+    # Path for saving recordings
     VIDEO_RECORDING_PATH: str = "./data/recordings"
 
     class Config:

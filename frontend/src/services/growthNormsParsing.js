@@ -1,12 +1,12 @@
 function decodePossiblyCp1251(arrayBuffer) {
-  // Большинство выгрузок с весов/Excel в РФ часто идут в Windows-1251.
+  // Most weight-scale/Excel exports in the RF often come in Windows-1251.
   const tryDecoders = ['windows-1251', 'utf-8'];
 
   for (const encoding of tryDecoders) {
     try {
-      // TextDecoder в современных браузерах поддерживает windows-1251.
+      // TextDecoder in modern browsers supports windows-1251.
       const text = new TextDecoder(encoding, { fatal: false }).decode(arrayBuffer);
-      // Простая эвристика: если в тексте слишком много replacement char, пробуем следующий.
+      // Simple heuristic: if the text has too many replacement chars, try the next one.
       const badChars = (text.match(/\uFFFD/g) || []).length;
       if (badChars < 5) return text;
     } catch {
@@ -14,7 +14,7 @@ function decodePossiblyCp1251(arrayBuffer) {
     }
   }
 
-  // Фолбэк: как есть
+  // Fallback: as is
   return new TextDecoder('utf-8', { fatal: false }).decode(arrayBuffer);
 }
 
@@ -31,7 +31,7 @@ function parseNumberMaybe(value) {
 function detectDelimiter(text) {
   const semicolons = (text.match(/;/g) || []).length;
   const commas = (text.match(/,/g) || []).length;
-  // Для данных с весов обычно ';'
+  // For weight-scale data usually ';'
   return semicolons >= commas ? ';' : ',';
 }
 
@@ -47,7 +47,7 @@ function extractDateFromFilename(fileName) {
     return `${yyyy}-${mm}-${dd}`;
   }
 
-  // dd.mm.yy -> 20yy (эвристика)
+  // dd.mm.yy -> 20yy (heuristic)
   const m2 = name.match(/(\d{2})\.(\d{2})\.(\d{2})/);
   if (m2) {
     const dd = m2[1];
@@ -61,8 +61,8 @@ function extractDateFromFilename(fileName) {
 }
 
 function extractAverageFromHeader(text) {
-  // Пытаемся найти "Средний [Гр]" или "Средняя" и число рядом.
-  // Примеры строк часто выглядят как: "Средний [Гр]:;1108.000"
+  // We try to find "Средний [Гр]" or "Средняя" and a nearby number.
+  // Example lines often look like: "Средний [Гр]:;1108.000"
   const patterns = [
     /Средн\S*\s*\[[^\]]*\]\s*[:;]\s*([0-9\s.,]+)/i,
     /Средн\S*\s*[:;]\s*([0-9\s.,]+)/i,
@@ -90,8 +90,8 @@ function computeAverageFromTable(text) {
   const numbers = [];
   for (const line of lines) {
     const parts = line.split(delimiter).map((p) => p.trim());
-    // В типичной выгрузке вес в граммах — 4-я колонка (индекс 3)
-    // Но пробуем собрать любые похожие числа из строки и взять наиболее правдоподобные.
+    // In a typical export the weight in grams is the 4th column (index 3)
+    // But we try to collect any similar numbers from the line and take the most plausible ones.
     for (const p of parts) {
       const num = parseNumberMaybe(p);
       if (num != null && num > 0 && num < 100000) {
@@ -100,8 +100,8 @@ function computeAverageFromTable(text) {
     }
   }
 
-  // Сырые выгрузки содержат и CV/Uniformity/StdDev, они тоже числа.
-  // Чтобы не смешивать, попробуем взять модально близкий диапазон "весов": > 100 и < 10000.
+  // Raw exports also contain CV/Uniformity/StdDev, which are also numbers.
+  // To avoid mixing them, we try to take the modal "weight" range: > 100 and < 10000.
   const weightCandidates = numbers.filter((n) => n >= 100 && n <= 10000);
   const arr = weightCandidates.length >= 10 ? weightCandidates : numbers;
   if (!arr.length) return null;
@@ -111,8 +111,8 @@ function computeAverageFromTable(text) {
 }
 
 function parseGrowthNormsTable(rows) {
-  // Новый формат: таблица с колонками [день, среднесуточный_привес, живая_масса_г, ...]
-  // Находим строку с заголовком, где есть "Средне-суточный" или "Живая масса"
+  // New format: a table with columns [day, среднесуточный_привес, живая_масса_г, ...]
+  // We find the header row containing "Средне-суточный" or "Живая масса"
   let headerIdx = -1;
   for (let i = 0; i < Math.min(rows.length, 15); i++) {
     const row = rows[i] || [];
@@ -125,13 +125,13 @@ function parseGrowthNormsTable(rows) {
 
   if (headerIdx === -1) return null;
 
-  // Пропускаем дополнительные строки заголовка (нумерация колонок, единицы измерения)
+  // Skip additional header rows (column numbering, units of measurement)
   let dataStartIdx = headerIdx + 1;
-  // Обычно после основного заголовка идёт строка с номерами колонок ("1","2","3"...) и строка с единицами ("дни","гр","гр"...)
+  // Usually after the main header comes a row with column numbers ("1","2","3"...) and a row with units ("дни","гр","гр"...)
   while (dataStartIdx < rows.length) {
     const row = rows[dataStartIdx] || [];
     const first = String(row[0] || '').trim().toLowerCase();
-    // Если первая ячейка — "дни", "день", число типа "1","2","3" (номер колонки) — пропускаем
+    // If the first cell is "дни", "день", or a number like "1","2","3" (column number) — skip it
     if (first === 'дни' || first === 'день' || /^[1-9]$/.test(first)) {
       dataStartIdx++;
     } else {
@@ -228,15 +228,15 @@ export async function parseGrowthNormsFiles(fileList) {
         throw new Error(`Пустой Excel-файл: ${file.name}`);
       }
       const sheet = workbook.Sheets[firstSheetName];
-      // Получаем как массив массивов для табличного парсинга
+      // Get the data as an array of arrays for table parsing
       rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
-      // Также получаем CSV для совместимости со старыми форматами
+      // Also get CSV for compatibility with old formats
       text = XLSX.utils.sheet_to_csv(sheet, { FS: ';' });
     } else {
       text = decodePossiblyCp1251(buf);
     }
 
-    // 1) Пробуем новый формат: табличная структура с днями и живой массой
+    // 1) Try the new format: table structure with days and live weight
     if (rows) {
       const tableFormat = parseGrowthNormsTable(rows);
       if (tableFormat && tableFormat.byDay) {
@@ -246,7 +246,7 @@ export async function parseGrowthNormsFiles(fileList) {
       }
     }
 
-    // 2) Пробуем формат "2 колонки" (day/date;gram)
+    // 2) Try the "2 columns" format (day/date;gram)
     const twoCol = parseTwoColumnNorms(text);
     if (twoCol) {
       if (twoCol.byDate) Object.assign(byDate, twoCol.byDate);
@@ -255,7 +255,7 @@ export async function parseGrowthNormsFiles(fileList) {
       continue;
     }
 
-    // 3) Формат выгрузки с весов: одна дата + средний вес
+    // 3) Weight-scale export format: one date + average weight
     const isoDate = extractDateFromFilename(file.name);
     const avg = extractAverageFromHeader(text) ?? computeAverageFromTable(text);
 

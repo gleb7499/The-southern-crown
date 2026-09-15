@@ -16,13 +16,13 @@ export default function FiltersForm({ onFilter }) {
   }, []);
 
   useEffect(() => {
-    // При смене фермы сбрасываем зависимые поля
+    // When the farm changes, reset the dependent fields
     setSelectedFrame('');
     setSelectedControlPoint('');
   }, [selectedFarm]);
 
   useEffect(() => {
-    // При смене корпуса сбрасываем точку контроля
+    // When the building changes, reset the control point
     setSelectedControlPoint('');
   }, [selectedFrame]);
 
@@ -32,7 +32,7 @@ export default function FiltersForm({ onFilter }) {
       const farmsRes = await farmsAPI.getFarms();
       setFarms(farmsRes.data);
 
-      // Загружаем все точки контроля со всех ферм
+      // Load all control points from all farms
       const pointsByFarm = await Promise.all(
         (farmsRes.data || []).map(async (farm) => {
           try {
@@ -57,7 +57,7 @@ export default function FiltersForm({ onFilter }) {
   };
 
   const handleFilter = () => {
-    // Найти выбранную точку контроля для получения её названия
+    // Find the selected control point to get its name
     const selectedCP = allControlPoints.find((cp) => cp.id === parseInt(selectedControlPoint));
 
     onFilter({

@@ -1,31 +1,30 @@
-# Установка медиа-сервера MediaMTX для ретрансляции потоков с камер наблюдения
+# Installing the MediaMTX Media Server for Restreaming Surveillance Camera Streams
 
-Установка производится со страницы релизов проекта MediaMTX
+Installation is performed from the MediaMTX project releases page:
 https://github.com/bluenviron/mediamtx/tags
 
-На момент написания инструкции последней актуальной версией является v1.9.0. 
+At the time of writing, the latest actual version is v1.9.0.
 
-Установка медиа-сервера состоит из следующих шагов:
-1. скачать архив из релиза подходящей платформы (в общем случае - amd64);
-2. распаковать полученный архив;
-3. перенести распакованный бинарный файл `mediamtx` в папку `/usr/local/bin`;
-4. скопировать конфигурационный файл `mediamtx.yml` из текущей папки в `/usr/local/etc`;
-5. создать папку `/var/log/mediamtx`;
-6. скопировать описание службы systemd `mediamtx.service` из текущей папки в `/etc/systemd/system`;
-7. запустить службу командой `systemctl start mediamtx`;
-8. убедиться в успешном старте службы командой `systemctl status mediamtx`, служба должна быть активна;
-9. добавить службу в автозапуск командой `systemctl enable mediamtx`
+Installing the media server consists of the following steps:
+1. download the archive of the appropriate platform from a release (generally - amd64);
+2. unpack the downloaded archive;
+3. move the unpacked binary file `mediamtx` to the `/usr/local/bin` folder;
+4. copy the configuration file `mediamtx.yml` from the current folder to `/usr/local/etc`;
+5. create the folder `/var/log/mediamtx`;
+6. copy the systemd service description `mediamtx.service` from the current folder to `/etc/systemd/system`;
+7. start the service with the command `systemctl start mediamtx`;
+8. make sure the service started successfully with the command `systemctl status mediamtx`; the service must be active;
+9. add the service to autostart with the command `systemctl enable mediamtx`
 
-**Внимание!** Медиа-сервер использует порты TCP 8554 (RTSP), 8888 (HLS) и UDP 8000 (RTP), 8001 (RTCP). Предварительно необходимо убедиться, что эти порты доступны и не конфликтуют с уже запущенными приложениями, в противном случае необходимо переназначить их либо в конфликтующем приложении, либо в конфигурации MediaMTX (что, в свою очередь, может затронуть код frontend).
+**Attention!** The media server uses TCP ports 8554 (RTSP), 8888 (HLS) and UDP 8000 (RTP), 8001 (RTCP). You must first make sure these ports are available and do not conflict with already running applications; otherwise, you need to remap them either in the conflicting application or in the MediaMTX configuration (which, in turn, may affect the frontend code).
 
-Возможен запуск службы от непривилегированного пользователя. В этом случае надо исправить файл описания службы (добавить параметр `User=имя_пользователя` в секцию `Service`) и убедиться в доступности для указанного пользователя каталога журналов `/var/log/mediamtx` на запись.
+It is possible to run the service as an unprivileged user. In this case, you need to fix the service description file (add the parameter `User=username` to the `Service` section) and make sure the log directory `/var/log/mediamtx` is writable by the specified user.
 
+# Configuring the Media Server
 
-# Конфигурирация медиа-сервера
+The media server configuration is located in the file `mediamtc.yml`
 
-Конфигурация медиа-сервера расположена в файле `mediamtc.yml`
-
-Разница между конфигурацией по умолчанию и используемой заключается в указании явного каталога для хранения лога, а также отключения механизмов публикации по протоколам RTMP, WebRTC и SRT:
+The difference between the default configuration and the one used lies in specifying an explicit directory for storing the log, as well as disabling publishing via the RTMP, WebRTC, and SRT protocols:
 
 ```diff
 14c14

@@ -23,10 +23,10 @@ async def get_farms(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Получить список ферм с пагинацией.
+    Get the list of farms with pagination.
 
-    - **skip**: Количество записей для пропуска
-    - **limit**: Максимальное количество возвращаемых записей
+    - **skip**: Number of records to skip
+    - **limit**: Maximum number of records to return
     """
     result = await db.execute(select(FarmModel).offset(skip).limit(limit))
     farms = result.scalars().all()
@@ -41,10 +41,10 @@ async def create_farm(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Создать новую ферму.
+    Create a new farm.
 
-    Требуются права администратора.
-    - **name**: Название фермы
+    Administrator rights are required.
+    - **name**: Farm name
     """
     # Check if admin
     if not current_user.is_admin:  # type: ignore

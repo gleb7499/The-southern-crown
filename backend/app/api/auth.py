@@ -20,12 +20,12 @@ async def login(
     credentials: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)
 ):
     """
-    Аутентификация пользователя и возврат JWT токена в httponly cookie.
+    Authenticate the user and return a JWT token in an httponly cookie.
 
-    - **email**: Email адрес пользователя
-    - **password**: Пароль пользователя
+    - **email**: User email address
+    - **password**: User password
 
-    Возвращает сообщение об успешной аутентификации.
+    Returns a message about successful authentication.
     """
     logger.info(f"Login attempt for email: {credentials.email}")
 
@@ -66,7 +66,7 @@ async def login(
 @router.post("/logout")
 async def logout(response: Response):
     """
-    Выход из системы. Удаляет cookie с токеном аутентификации.
+    Log out. Deletes the cookie with the authentication token.
     """
     response.delete_cookie(key="access_token")
     return {"message": "Logout successful"}
@@ -75,6 +75,6 @@ async def logout(response: Response):
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     """
-    Получить информацию о текущем авторизованном пользователе.
+    Get information about the current authorized user.
     """
     return current_user

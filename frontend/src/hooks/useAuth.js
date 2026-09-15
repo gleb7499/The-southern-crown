@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
 
 /**
- * Хук для проверки аутентификации пользователя
- * Проверяет валидность сессии при каждом монтировании компонента
+ * Hook for checking user authentication
+ * Checks session validity on every component mount
  * @returns {Object} { isAuthenticated, isLoading, user }
  */
 export const useAuth = () => {

@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # Create database tables (async)
 async def init_db():
-    """Инициализация базы данных - создание таблиц с повторными попытками"""
+    """Database initialization - creating tables with retries"""
     max_retries = 10
     retry_delay = 2
     
@@ -44,19 +44,19 @@ async def init_db():
 
 
 async def create_admin_user():
-    """Создает администратора при первом запуске, если его еще нет"""
+    """Creates the administrator on first launch if it does not exist yet"""
     max_retries = 5
     retry_delay = 2
     
     for attempt in range(max_retries):
         try:
             async with AsyncSessionLocal() as db:
-                # Проверяем, существует ли уже администратор
+                # Check if the administrator already exists
                 result = await db.execute(select(User).filter(User.email == settings.ADMIN_EMAIL))
                 admin = result.scalar_one_or_none()
 
                 if not admin:
-                    # Создаем администратора
+                    # Create the administrator
                     admin = User(
                         email=settings.ADMIN_EMAIL,
                         hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
@@ -77,7 +77,7 @@ async def create_admin_user():
                 await asyncio.sleep(retry_delay)
             else:
                 logger.error(f"Не удалось создать администратора после {max_retries} попыток: {e}")
-                # Не поднимаем исключение, чтобы приложение могло запуститься
+                # Do not raise the exception so the application can still start
 
 app = FastAPI(
     title="Southern Crown Admin API",
@@ -125,20 +125,20 @@ def health():
 
 @app.on_event("startup")
 async def startup_event():
-    """Запуск планировщика и инициализация БД при старте приложения"""
+    """Start the scheduler and initialize the database on application startup"""
     await init_db()
     await create_admin_user()
-    # Создаем тестовые данные, если их еще нет
+    # Create test data if it does not exist yet
     try:
         await init_test_data()
     except Exception as e:
         logger.error(f"Ошибка при создании тестовых данных: {e}")
-        # Не останавливаем приложение, если тестовые данные не создались
+        # Do not stop the application if test data was not created
     start_scheduler()
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Остановка планировщика при остановке приложения"""
+    """Stop the scheduler on application shutdown"""
     shutdown_scheduler()
     await engine.dispose()
