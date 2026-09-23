@@ -75,7 +75,7 @@ function formatTick(value, unit, step) {
   return unit === '%' ? `${formatted}%` : `${formatted} г`;
 }
 
-function buildYAxis(values, unit, metricKey) {
+function buildYAxis(values, unit, _metricKey) {
   // For percentage metrics (uniformity, cv) we fix the scale to 0-100%
   if (unit === '%') {
     const yMax = 100;
@@ -523,7 +523,6 @@ export default function Reports() {
                   );
                 }
 
-                const maxValue = Math.max(...values);
                 // Y axis: fixed 0-100% for percentages, dynamic for weight
                 const { yMax, ticks: tickValues, step } = buildYAxis(values, metric.unit, metric.key);
 
