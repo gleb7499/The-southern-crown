@@ -88,13 +88,13 @@ python -m app.init_db
 **What happens**:
 
 - All tables are created
-- An admin user is created (<admin@example.com> / admin123)
+- An admin user is created with credentials from the `ADMIN_EMAIL` / `ADMIN_PASSWORD` environment variables (defaults: `admin@example.com` / `admin123`)
 - 3 farms are created with control points, cameras, growth_rates, reports
 
 **Expected result**:
 
 ```
-Created admin user: admin@example.com / admin123
+Created admin user: <ADMIN_EMAIL> / <ADMIN_PASSWORD>
 Created sample farms, control points, cameras, growth rates, and reports
 Database initialized successfully
 ```
@@ -165,8 +165,8 @@ INFO:     Started server process
 
      ```json
      {
-       "email": "admin@example.com",
-       "password": "admin123"
+       "email": "<your ADMIN_EMAIL>",
+       "password": "<your ADMIN_PASSWORD>"
      }
      ```
 
@@ -194,7 +194,7 @@ INFO:     Started server process
 $response = Invoke-WebRequest -Uri "http://localhost:8000/api/auth/login" `
   -Method POST `
   -ContentType "application/json" `
-  -Body '{"email":"admin@example.com","password":"admin123"}' `
+  -Body '{"email":"<your ADMIN_EMAIL>","password":"<your ADMIN_PASSWORD>"}' `
   -SessionVariable session
 
 # Get farms

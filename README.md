@@ -1,5 +1,7 @@
 # The Southern Crown - Admin Panel
 
+[![CI](https://github.com/gleb7499/the-southern-crown/actions/workflows/ci.yml/badge.svg)](https://github.com/gleb7499/the-southern-crown/actions/workflows/ci.yml)
+
 Admin panel with a FastAPI backend and a React frontend for managing farms, buildings, control points, and cameras.
 
 ## Tech Stack
@@ -54,8 +56,17 @@ docker compose up --build
 
 ### Login Credentials
 
-**Email:** <admin@example.com>  
-**Password:** admin123
+The admin user is created automatically on first launch. Credentials are set via environment variables (see `docker-compose.yml`):
+
+- `ADMIN_EMAIL` (default: `admin@example.com`)
+- `ADMIN_PASSWORD` (default: `admin123`)
+
+For production, always override both:
+
+```bash
+export ADMIN_EMAIL=your-email@example.com
+export ADMIN_PASSWORD=your-secure-password
+```
 
 ## Project Structure
 
@@ -324,9 +335,8 @@ npm run build
 
 The project is fully documented and ready to use. Read more:
 
-- **[API.md](API.md)** - Full documentation of all API endpoints with examples
+- **[Interactive API docs](http://localhost:8000/docs)** (Swagger UI, available when the backend is running) - documentation of all API endpoints with examples
 - **[SECURITY.md](SECURITY.md)** - Security guide and production deployment
-- **[IMPROVEMENTS.md](IMPROVEMENTS.md)** - Final summary of all improvements
 
 ### Security
 
@@ -339,7 +349,7 @@ The project is fully documented and ready to use. Read more:
 ### API
 
 ✅ Pagination on all list endpoints  
-✅ Comprehensive API documentation (see [API.md](API.md))  
+✅ Comprehensive API documentation (see Swagger UI at `/docs` when running)  
 ✅ Input parameter validation  
 ✅ Proper error handling  
 ✅ Health check endpoint (`GET /health`)  
