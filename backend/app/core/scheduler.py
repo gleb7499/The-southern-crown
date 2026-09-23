@@ -55,7 +55,7 @@ def configure_scheduled_jobs():
 def start_scheduler():
     """
     Start the scheduler in background mode.
-    
+
     Tasks will run in separate threads,
     without blocking the FastAPI server.
     """

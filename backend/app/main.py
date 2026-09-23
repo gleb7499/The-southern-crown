@@ -23,11 +23,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Create database tables (async)
+
+
 async def init_db():
     """Database initialization - creating tables with retries"""
     max_retries = 10
     retry_delay = 2
-    
+
     for attempt in range(max_retries):
         try:
             async with engine.begin() as conn:
@@ -47,7 +49,7 @@ async def create_admin_user():
     """Creates the administrator on first launch if it does not exist yet"""
     max_retries = 5
     retry_delay = 2
-    
+
     for attempt in range(max_retries):
         try:
             async with AsyncSessionLocal() as db:

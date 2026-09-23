@@ -18,7 +18,7 @@ from app.schemas.growth_rate import GrowthRate, GrowthRateCreate
 from app.schemas.report_schema import Report, ReportCreate
 
 
-def test_schema(schema_name, schema_class, test_data):
+def check_schema(schema_name, schema_class, test_data):
     """Tests a single Pydantic schema"""
     print(f"   Testing {schema_name}...")
     try:
@@ -31,7 +31,7 @@ def test_schema(schema_name, schema_class, test_data):
         return False
 
 
-def test_all_schemas():
+def run_schema_checks():
     """Tests all Pydantic schemas"""
     print("🧪 Checking Pydantic schemas...\n")
 
@@ -80,7 +80,7 @@ def test_all_schemas():
         (
             "CameraCreate",
             CameraCreate,
-            {"name": "Камера 1", "url": "http://example.com/stream/1", "control_point_id": 1},
+            {"name": "Камера 1", "url": "http://example.com/stream/1", "farm_id": 1, "control_point_id": 1},
         ),
         ("LoginRequest", LoginRequest, {"email": "admin@example.com", "password": "admin123"}),
         ("UserResponse", UserResponse, {"id": 1, "email": "admin@example.com", "is_admin": True}),
@@ -90,7 +90,7 @@ def test_all_schemas():
     failed = 0
 
     for test_name, schema, data in tests:
-        if test_schema(test_name, schema, data):
+        if check_schema(test_name, schema, data):
             passed += 1
         else:
             failed += 1
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     print("=" * 60 + "\n")
 
     try:
-        success = test_all_schemas()
+        success = run_schema_checks()
 
         print("\n" + "=" * 60)
         if success:
@@ -119,3 +119,8 @@ if __name__ == "__main__":
         import traceback
 
         traceback.print_exc()
+
+
+def test_all_schemas():
+    """Pytest entry point: all Pydantic schemas must validate."""
+    assert run_schema_checks()

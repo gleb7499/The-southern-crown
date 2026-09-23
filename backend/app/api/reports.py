@@ -233,7 +233,7 @@ async def get_statistics(
 
 
 @router.post("/generate", response_model=ReportResponse)
-async def generate_report(
+async def generate_report(  # noqa: C901
     report_request: ReportRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),

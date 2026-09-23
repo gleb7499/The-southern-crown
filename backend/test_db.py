@@ -3,6 +3,7 @@ Script for testing the database structure
 Run: python test_db.py
 """
 
+import asyncio
 import sys
 from pathlib import Path
 
@@ -26,7 +27,12 @@ def test_database_structure():
 
     # Create tables
     print("1. Creating tables...")
-    Base.metadata.create_all(bind=engine)
+    async def _create_tables():
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        await engine.dispose()
+
+    asyncio.run(_create_tables())
     print("   ✅ Tables created\n")
 
     # Check that tables exist

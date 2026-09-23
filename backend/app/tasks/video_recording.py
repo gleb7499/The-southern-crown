@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
 
 from app.core.config import settings
@@ -37,8 +37,7 @@ def record_video_from_camera(camera: Camera, duration: int, output_dir: Path) ->
 
     # Determine ffmpeg parameters depending on the camera type
     # The camera type detection logic can be extended
-    input_prefix = "-rtsp_transport tcp"
-    
+
     # ffmpeg command for recording
     cmd = [
         "ffmpeg",
@@ -83,20 +82,20 @@ def record_video_from_camera(camera: Camera, duration: int, output_dir: Path) ->
 async def record_all_cameras():
     """
     Periodic task to record video from all cameras in the database.
-    
+
     All cameras start recording simultaneously (in parallel),
     rather than sequentially.
 
     This task is launched on a schedule by APScheduler.
     """
     logger.info("Запуск задачи записи видео со всех камер (параллельное выполнение)")
-    
+
     async with AsyncSessionLocal() as db:
         try:
             # Get all cameras from the database
             result = await db.execute(select(Camera))
             cameras: List[Camera] = result.scalars().all()
-            
+
             if not cameras:
                 logger.warning("В базе данных нет камер для записи")
                 return {"status": "no_cameras", "recorded": 0}
@@ -129,7 +128,7 @@ async def record_all_cameras():
                     camera = future_to_camera[future]
                     try:
                         output_path = future.result()
-                        
+
                         if output_path:
                             recorded_count += 1
                             results.append({
