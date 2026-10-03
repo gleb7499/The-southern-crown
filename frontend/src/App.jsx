@@ -14,7 +14,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Suspense fallback={<Loading />}>
           <Routes>
             {/* Public route */}
