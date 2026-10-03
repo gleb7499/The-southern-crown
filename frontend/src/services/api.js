@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // GitHub Pages demo mode: no backend available, serve baked-in demo data.
-const IS_DEMO =
+export const IS_DEMO =
   (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io')) ||
   import.meta.env.VITE_DEMO === '1';
 
@@ -96,11 +96,24 @@ api.interceptors.response.use(
   }
 );
 
+const DEMO_TOKEN_KEY = 'sc-demo-token';
+const DEMO_USER = { id: 1, email: 'demo@southern-crown.example', is_admin: true, is_active: true };
+
 export const authAPI = IS_DEMO
   ? {
-      login: () => ok({ message: 'demo' }),
-      logout: () => ok({ message: 'demo' }),
-      getMe: () => ok({ id: 1, email: 'demo@southern-crown.example', is_admin: true, is_active: true }),
+      login: (email, password) => {
+        if (!email || !password) return Promise.reject(new Error('empty credentials'));
+        localStorage.setItem(DEMO_TOKEN_KEY, 'demo-' + Date.now());
+        return ok({ message: 'demo' });
+      },
+      logout: () => {
+        localStorage.removeItem(DEMO_TOKEN_KEY);
+        return ok({ message: 'demo' });
+      },
+      getMe: () =>
+        localStorage.getItem(DEMO_TOKEN_KEY)
+          ? ok(DEMO_USER)
+          : Promise.reject(new Error('not authenticated')),
     }
   : {
       login: (email, password) => api.post('/auth/login', { email, password }),

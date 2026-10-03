@@ -38,6 +38,27 @@ body {
   width: min(400px, 92vw);
 }
 
+.demo-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #1a6b3a;
+  border-radius: 10px;
+  background: #eaf5ee;
+  font: 13px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+  color: #14301f;
+}
+
+.demo-hint strong {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: #1a6b3a;
+}
+
 /* On the login page the button must match the width of the inputs */
 .login-box .btn,
 .login-box .btn-primary,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../services/api';
+import { authAPI, IS_DEMO } from '../services/api';
 import Modal from '../components/Modal';
 import logo from '../assets/logo.svg';
 
@@ -50,6 +50,12 @@ export default function Login() {
     <div className="login-container">
       <div className="login-box">
         <img src={logo} alt="Южная Корона" className="logo" />
+        {IS_DEMO && (
+          <div className="demo-hint" role="note">
+            <strong>Test account</strong>
+            <span>Enter any email and password to explore the demo.</span>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <input
